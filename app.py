@@ -149,7 +149,7 @@ def my_interval_job():
                 bot.send_message(row, 'Анекдотів поки що немає.')
             else:
                 anegdot = str(getAnegdot())
-                bot.send_message(row, anegdot)
+                bot.send_message(row,"Добрий день, сьогодні запропоную вам такий анекдот: " + "\n" + anegdot)
 
 
 @server.route('/' + TOKEN, methods=['POST'])
