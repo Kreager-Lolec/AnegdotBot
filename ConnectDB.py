@@ -34,7 +34,7 @@ def CreateTable():
         );
                        ''')
     mydb.commit()
-    listadmin = ['mihailik_panchuk','kreager']
+    listadmin = ['mihailik_panchuk','kreager','Barik_superman']
     for row in listadmin:
         mycursor.execute(f'''INSERT INTO ADMINS (AdminUserName)
         SELECT N'{row}'
@@ -106,19 +106,23 @@ def checkIfNotExistAnedgotsByCategory(category):
 
 
 def addCategory(message):
+    categoryName = str(message.text).strip(" ")
+    print("Strip category: " + categoryName)
     mycursor = mydb.cursor()
     mycursor.execute(f'''INSERT INTO CATEGORIES (CategoryName)
-    SELECT N'{str(message.text)}'
+    SELECT N'{categoryName}'
     WHERE
-        NOT EXISTS (SELECT * FROM CATEGORIES WHERE CategoryName = N'{str(message.text)}')''')
+        NOT EXISTS (SELECT * FROM CATEGORIES WHERE CategoryName = N'{categoryName}')''')
     mydb.commit()
     mycursor.close()
 
 
 def addAnegdotToDb(message, category):
+    anegdot = str(message.text).strip(" ")
+    print("Strip Anegdot: " + anegdot)
     mycursor = mydb.cursor()
     mycursor.execute(f'''INSERT INTO ANEGDOTS (Anegdot,CategoryName)
-    SELECT N'{str(message.text)}', N'{category}'
+    SELECT N'{anegdot}', N'{category}'
     WHERE
         NOT EXISTS (SELECT * FROM ANEGDOTS WHERE CategoryName = N'{category}' AND Anegdot = N'{str(message.text)}')''')
     mydb.commit()
