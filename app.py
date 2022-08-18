@@ -19,22 +19,19 @@ splitword = '@3839fji38()#89'
 
 
 def getCurrentHour():
-    from_zone = tz.tzutc()
-    to_zone = tz.tzlocal()
-    utc = datetime.utcnow()
-    utc = utc.replace(tzinfo=from_zone)
-    current_hour = utc.astimezone(to_zone)
-    print(current_hour.hour)
-    # now = datetime.utcnow()
-    # if now.hour == 22:
-    #     current_hour = 1
-    # elif now.hour == 23:
-    #     current_hour = 2
-    # elif now.hour == 24:
-    #     current_hour = 3
-    # else:
-    #     current_hour = now.hour + 3
-    return current_hour.hour
+    utchour = datetime.now()
+    if utchour.hour == 21:
+        current_hour = 0
+    if utchour.hour == 22:
+        current_hour = 1
+    elif utchour.hour == 23:
+        current_hour = 2
+    elif utchour.hour == 24:
+        current_hour = 3
+    else:
+        current_hour = utchour.hour + 3
+    print(current_hour)
+    return current_hour
 
 
 def getWelcomeAccoringToHours():
