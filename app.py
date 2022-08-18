@@ -26,22 +26,25 @@ def addcategory(message):
     if checkIfAdmin(str(message.from_user.username)):
         AddChat(message)
         bot.reply_to(message, "Введіть назву категорії")
-        bot.register_next_step_handler(message, registerCategory)
+        bot.register_next_step_handler(message, registerCategory, message.from_user.username)
     else:
         bot.reply_to(message, "У вас немає прав на цю дію!")
 
 
-def registerCategory(message):
-    if checkIfExistsCategory(str(message.text)):
-        bot.reply_to(message, "Категорія уже існує")
+def registerCategory(message, username):
+    if message.from_user.username == username:
+        if checkIfExistsCategory(str(message.text)):
+            bot.reply_to(message, "Категорія уже існує")
+        else:
+            addCategory(message)
+            bot.reply_to(message, "Категорію успішно додано")
+        markup = InlineKeyboardMarkup()
+        markup.width = 3
+        for row in getCategories():
+            markup.add(InlineKeyboardButton(row, callback_data="showanegdot: " + row))
+        bot.reply_to(message, "Список категорій", reply_markup=markup)
     else:
-        addCategory(message)
-        bot.reply_to(message, "Категорію успішно додано")
-    markup = InlineKeyboardMarkup()
-    markup.width = 3
-    for row in getCategories():
-        markup.add(InlineKeyboardButton(row , callback_data="showanegdot: " + row))
-    bot.reply_to(message, "Список категорій", reply_markup=markup)
+        bot.reply_to(message, f"Зараз черга @{username}.")
 
 
 @bot.message_handler(commands=['addanegdot'])
@@ -87,8 +90,9 @@ def deletecategory(message):
         bot.reply_to(message, "У вас немає прав на цю дію!")
 
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("deletecategory: "))
+@bot.callback_query_handler(func=lambda call: call.data.startswith("deletecategory: "), pass_user_data=True)
 def callback_query(call: types.CallbackQuery):
+    print(call.from_user.username)
     category = str(call.data).replace("deletecategory: ","")
     if checkIfExistsCategory(category):
         deleteAnegdotsByCategory(category)
@@ -98,14 +102,14 @@ def callback_query(call: types.CallbackQuery):
         bot.reply_to(call.message, "Такої категорії не існує")
 
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("addanegdot: "))
+@bot.callback_query_handler(func=lambda call: call.data.startswith("addanegdot: "), pass_user_data=True)
 def callback_query(call: types.CallbackQuery):
     category = str(call.data).replace("addanegdot: ","")
     msg = bot.reply_to(call.message, "Впишіть ваш анекдот")
     bot.register_next_step_handler(msg, addAnegdot, category)
 
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("chooserand: "))
+@bot.callback_query_handler(func=lambda call: call.data.startswith("chooserand: "), pass_user_data=True)
 def callback_query(call: types.CallbackQuery):
     answer = str(call.data).replace("chooserand: ","")
     if answer == "readanegdotbycategory":
