@@ -90,7 +90,7 @@ def deletecategory(message):
         bot.reply_to(message, "У вас немає прав на цю дію!")
 
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("deletecategory: "), pass_user_data=True)
+@bot.callback_query_handler(func=lambda call: call.data.startswith("deletecategory: "))
 def callback_query(call: types.CallbackQuery):
     print(call.from_user.username)
     category = str(call.data).replace("deletecategory: ","")
@@ -102,14 +102,14 @@ def callback_query(call: types.CallbackQuery):
         bot.reply_to(call.message, "Такої категорії не існує")
 
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("addanegdot: "), pass_user_data=True)
+@bot.callback_query_handler(func=lambda call: call.data.startswith("addanegdot: "))
 def callback_query(call: types.CallbackQuery):
     category = str(call.data).replace("addanegdot: ","")
     msg = bot.reply_to(call.message, "Впишіть ваш анекдот")
     bot.register_next_step_handler(msg, addAnegdot, category)
 
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("chooserand: "), pass_user_data=True)
+@bot.callback_query_handler(func=lambda call: call.data.startswith("chooserand: "))
 def callback_query(call: types.CallbackQuery):
     answer = str(call.data).replace("chooserand: ","")
     if answer == "readanegdotbycategory":
