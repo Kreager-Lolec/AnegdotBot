@@ -1,9 +1,13 @@
+from dateutil import tz
+
+
 import Constant_File as Keys
 from telebot import *
 from telebot.types import *
 from ConnectDB import *
 from flask import Flask, request
 import os
+
 
 
 TOKEN = Keys.API_KEY
@@ -17,9 +21,22 @@ splitword = '@3839fji38()#89'
 
 
 def getCurrentHour():
-    now = datetime.now()
-    print(now.hour)
-    return int(now.hour)
+    from_zone = tz.tzutc()
+    to_zone = tz.tzlocal()
+    utc = datetime.utcnow()
+    utc = utc.replace(tzinfo=from_zone)
+    current_hour = utc.astimezone(to_zone)
+    print(current_hour.hour)
+    # now = datetime.utcnow()
+    # if now.hour == 22:
+    #     current_hour = 1
+    # elif now.hour == 23:
+    #     current_hour = 2
+    # elif now.hour == 24:
+    #     current_hour = 3
+    # else:
+    #     current_hour = now.hour + 3
+    return current_hour.hour
 
 
 def getWelcomeAccoringToHours():
