@@ -23,13 +23,13 @@ def getCurrentHour():
 
 def getWelcomeAccoringToHours():
     currentHour = getCurrentHour()
-    if (currentHour > 4) and (currentHour <= 12):
+    if (currentHour >= 4) and (currentHour < 12):
         return "Доброго ранку"
-    elif (currentHour > 12) and (currentHour <= 19):
+    elif (currentHour >= 12) and (currentHour < 19):
         return "Добрий день"
-    elif (currentHour > 19) and (currentHour <= 24):
+    elif (currentHour >= 19) and (currentHour < 24):
         return "Доброго вечора"
-    elif (currentHour >= 0) and (currentHour <= 4):
+    elif (currentHour >= 0) and (currentHour < 4):
         return "Доброї ночі"
     else:
         return "Мої Вітання"
@@ -37,13 +37,13 @@ def getWelcomeAccoringToHours():
 
 def getFarewellAccoringToHours():
     currentHour = getCurrentHour()
-    if (currentHour > 4) and (currentHour <= 12):
+    if (currentHour >= 4) and (currentHour < 12):
         return "Хорошого ранку!"
-    elif (currentHour > 12) and (currentHour <= 19):
+    elif (currentHour >= 12) and (currentHour < 19):
         return "Хорошого дня!"
-    elif (currentHour > 19) and (currentHour <= 24):
+    elif (currentHour >= 19) and (currentHour < 24):
         return "Хорошого вечора!"
-    elif (currentHour >= 0) and (currentHour <= 4):
+    elif (currentHour >= 0) and (currentHour < 4):
         return "Хорошої ночі!"
     else:
         return "До зустрічі!"
@@ -301,7 +301,11 @@ def my_interval_job():
                 anegdot = str(getAnegdot())
                 welcome = getWelcomeAccoringToHours()
                 print(welcome)
-                bot.send_message(row, welcome + ", сьогодні запропоную вам такий анекдот: " + "\n" + anegdot)
+                try:
+                    bot.send_message(row, welcome + ", сьогодні запропоную вам такий анекдот: " + "\n" + anegdot)
+                except:
+                    DeleteChat(row)
+                    my_interval_job()
 
 
 

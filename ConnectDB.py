@@ -195,3 +195,10 @@ def deleteNoneAnegdots():
     mycursor.execute(f"DELETE FROM ANEGDOTS WHERE Anegdot = 'None' ")
     mydb.commit()
     mycursor.close()
+
+
+def DeleteChat(chat_id):
+    mycursor = mydb.cursor()
+    mycursor.execute(f"DELETE FROM CHATS WHERE ChatId = '{chat_id}' ")
+    mydb.commit()
+    mycursor.close()
