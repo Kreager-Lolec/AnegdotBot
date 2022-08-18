@@ -18,6 +18,7 @@ splitword = '@3839fji38()#89'
 
 def getCurrentHour():
     now = datetime.now()
+    print(now.hour)
     return int(now.hour)
 
 
