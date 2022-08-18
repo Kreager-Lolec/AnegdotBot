@@ -22,7 +22,7 @@ def getCurrentHour():
     utchour = datetime.now()
     if utchour.hour == 21:
         current_hour = 0
-    if utchour.hour == 22:
+    elif utchour.hour == 22:
         current_hour = 1
     elif utchour.hour == 23:
         current_hour = 2
