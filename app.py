@@ -318,7 +318,6 @@ def my_interval_job():
                     bot.send_message(row, welcome + ", сьогодні запропоную вам такий анекдот: " + "\n" + anegdot)
                 except:
                     DeleteChat(row)
-                    my_interval_job()
 
 
 
