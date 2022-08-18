@@ -1,10 +1,7 @@
-import random
-
 import Constant_File as Keys
 from telebot import *
 from telebot.types import *
 from ConnectDB import *
-import re
 from flask import Flask, request
 import os
 
@@ -26,9 +23,12 @@ def start(message):
 
 @bot.message_handler(commands=['addcategory'])
 def addcategory(message):
-    AddChat(message)
-    bot.reply_to(message, "Введіть назву категорії")
-    bot.register_next_step_handler(message, registerCategory)
+    if checkIfAdmin(str(message.from_user.username)):
+        AddChat(message)
+        bot.reply_to(message, "Введіть назву категорії")
+        bot.register_next_step_handler(message, registerCategory)
+    else:
+        bot.reply_to(message, "У вас немає прав на цю дію!")
 
 
 def registerCategory(message):
@@ -46,17 +46,21 @@ def registerCategory(message):
 
 @bot.message_handler(commands=['addanegdot'])
 def addanegdot(message):
-    AddChat(message)
-    markup = InlineKeyboardMarkup()
-    markup.width = 3
-    for row in getCategories():
-        print(row)
-        markup.add(InlineKeyboardButton(row , callback_data="addanegdot: " + row))
-    bot.reply_to(message, "Оберіть категорію, до якої буде відноситися анегдот", reply_markup=markup)
+    if checkIfAdmin(str(message.from_user.username)):
+        AddChat(message)
+        markup = InlineKeyboardMarkup()
+        markup.width = 3
+        for row in getCategories():
+            print(row)
+            markup.add(InlineKeyboardButton(row, callback_data="addanegdot: " + row))
+        bot.reply_to(message, "Оберіть категорію, до якої буде відноситися анегдот", reply_markup=markup)
+    else:
+        bot.reply_to(message, "У вас немає прав на цю дію!")
 
 
 @bot.message_handler(commands=['randomanegdot'])
 def randomanegdot(message):
+    deleteNoneAnegdots()
     AddChat(message)
     markup = InlineKeyboardMarkup()
     item1 = InlineKeyboardButton(text="Почитати анекдот по конкретній категорії",callback_data="chooserand: readanegdotbycategory")
@@ -67,17 +71,20 @@ def randomanegdot(message):
 
 @bot.message_handler(commands=['deletecategory'])
 def deletecategory(message):
-    AddChat(message)
-    markup = InlineKeyboardMarkup()
-    markup.width = 3
-    listOfCategories = getCategories()
-    if not listOfCategories:
-        bot.reply_to(message, "Ви ще не додали категорій")
+    if checkIfAdmin(str(message.from_user.username)):
+        AddChat(message)
+        markup = InlineKeyboardMarkup()
+        markup.width = 3
+        listOfCategories = getCategories()
+        if not listOfCategories:
+            bot.reply_to(message, "Ви ще не додали категорій")
+        else:
+            for row in listOfCategories:
+                print(row)
+                markup.add(InlineKeyboardButton(row, callback_data="deletecategory: " + row))
+            bot.reply_to(message, "Список категорій", reply_markup=markup)
     else:
-        for row in listOfCategories:
-            print(row)
-            markup.add(InlineKeyboardButton(row, callback_data="deletecategory: " + row))
-        bot.reply_to(message, "Список категорій", reply_markup=markup)
+        bot.reply_to(message, "У вас немає прав на цю дію!")
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("deletecategory: "))
@@ -142,6 +149,7 @@ def addAnegdot(message, category):
 
 def my_interval_job():
     if checkIfExistChats():
+        deleteNoneAnegdots()
         listId = GetChatsId()
         print(listId)
         for row in listId:
