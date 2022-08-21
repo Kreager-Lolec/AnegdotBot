@@ -62,6 +62,12 @@ def getFarewellAccoringToHours():
         return "До зустрічі!"
 
 
+@bot.message_handler(content_types=['text'])
+def sendanegdotfromsonya(message):
+    if message.text == "@mihailik_panchuk":
+        bot.send_audio(chat_id=message.chat.id,audio=open('audio_2022-08-20_23-49-24.MP3', 'rb'))
+
+
 @bot.message_handler(commands=['start'])
 def start(message):
     if checkIfNoneUserName(message.from_user.username):
