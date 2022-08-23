@@ -114,6 +114,14 @@ def checkIfNotExistAnedgots():
     return False
 
 
+def checkIfNotExistCategories():
+    mycursor = mydb.cursor()
+    mycursor.execute(f'''SELECT COUNT(*) FROM CATEGORIES''')
+    if mycursor.fetchone()[0] == 0:
+        return True
+    return False
+
+
 def checkIfNotExistAnedgotsByCategory(categoryLogical):
     category = proccesAnegdotOrCategoryName(categoryLogical)
     mycursor = mydb.cursor()

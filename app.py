@@ -133,15 +133,18 @@ def addanegdot(message):
     else:
         if checkIfAdmin(str(message.from_user.username)):
             AddChat(message)
-            markup = InlineKeyboardMarkup()
-            markup.width = 3
-            for row in getCategories():
-                print(row)
-                print("Size" + str(sys.getsizeof("addaneg: " + message.from_user.username + splitword_one)))
-                print("Size category" + str(sys.getsizeof(row)))
-                markup.add(InlineKeyboardButton(row,
-                                                callback_data="addaneg: " + message.from_user.username + splitword_one + row))
-            bot.reply_to(message, "Оберіть категорію, до якої буде відноситися анегдот", reply_markup=markup)
+            if checkIfNotExistCategories():
+                bot.reply_to(message, "Ви ще не додали категорій, до яких ви будете додавати анекдоти,тому введіть команду /addcategory")
+            else:
+                markup = InlineKeyboardMarkup()
+                markup.width = 3
+                for row in getCategories():
+                    print(row)
+                    print("Size" + str(sys.getsizeof("addaneg: " + message.from_user.username + splitword_one)))
+                    print("Size category" + str(sys.getsizeof(row)))
+                    markup.add(InlineKeyboardButton(row,
+                                                    callback_data="addaneg: " + message.from_user.username + splitword_one + row))
+                bot.reply_to(message, "Оберіть категорію, до якої буде відноситися анегдот", reply_markup=markup)
         else:
             bot.reply_to(message, "У вас немає прав на цю дію!")
 
