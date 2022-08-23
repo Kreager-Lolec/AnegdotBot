@@ -157,8 +157,8 @@ def addAnegdotToDb(message, category):
     mycursor.close()
 
 
-def removeAnegdotFromDb(message):
-    anegdotLogical = proccesAnegdotOrCategoryName(str(message.text))
+def removeAnegdotFromDb(anegdot):
+    anegdotLogical = proccesAnegdotOrCategoryName(str(anegdot))
     mycursor = mydb.cursor()
     mycursor.execute(f''' DELETE FROM ANEGDOTS WHERE AnegdotLogical = N'{anegdotLogical}' ''')
     mydb.commit()
