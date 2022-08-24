@@ -100,7 +100,7 @@ def addcategory(message):
 
 
 def registerCategory(message, username):
-    maxNumOfSymsForCategory = 20
+    maxNumOfSymsForCategory = 55
     if message.from_user.username == username:
         if message.text == "🛑 Відмінити операцію!":
             farewell = getFarewellAccoringToHours()
@@ -116,10 +116,11 @@ def registerCategory(message, username):
             markup = InlineKeyboardMarkup()
             markup.width = 3
             for row in getCategories():
-                markup.add(InlineKeyboardButton(row, callback_data="showanegdot: " + row))
+                print(sys.getsizeof(row))
+                markup.add(InlineKeyboardButton(row, callback_data="showane: " + row))
             bot.reply_to(message, "Список категорій", reply_markup=markup)
         else:
-            msg = bot.reply_to(message, f'Назва категорії: "{message.text}" є занадто довгою (максимальна кількість символів: {maxNumOfSymsForCategory} ')
+            msg = bot.reply_to(message, f'Назва категорії: "{message.text}" є занадто довгою ( максимальна кількість символів: {maxNumOfSymsForCategory} )')
             bot.register_next_step_handler(msg, registerCategory, username)
     else:
         bot.reply_to(message, f"Зараз черга @{username}.")
@@ -140,10 +141,8 @@ def addanegdot(message):
                 markup.width = 3
                 for row in getCategories():
                     print(row)
-                    print("Size" + str(sys.getsizeof("addaneg: " + message.from_user.username + splitword_one)))
-                    print("Size category" + str(sys.getsizeof(row)))
                     markup.add(InlineKeyboardButton(row,
-                                                    callback_data="addaneg: " + message.from_user.username + splitword_one + row))
+                                                    callback_data="addaneg: " + row))
                 bot.reply_to(message, "Оберіть категорію, до якої буде відноситися анегдот", reply_markup=markup)
         else:
             bot.reply_to(message, "У вас немає прав на цю дію!")
@@ -196,9 +195,9 @@ def randomanegdot(message):
         AddChat(message)
         markup = InlineKeyboardMarkup()
         item1 = InlineKeyboardButton(text="Почитати анекдот по конкретній категорії",
-                                     callback_data="chorand: " + message.from_user.username + splitword_one + "readanegdotbycategory")
+                                     callback_data="chorand: " + "readanegdotbycategory")
         item2 = InlineKeyboardButton(text="Почитати анекдот",
-                                     callback_data="chorand: " + message.from_user.username + splitword_one + "readanegdot")
+                                     callback_data="chorand: " + "readanegdot")
         markup.add(item1, item2)
         bot.reply_to(message, 'Оберіть один із варіантів.', reply_markup=markup)
 
@@ -219,7 +218,7 @@ def deletecategory(message):
                 for row in listOfCategories:
                     print(row)
                     markup.add(InlineKeyboardButton(row,
-                                                    callback_data="adelcat: " + message.from_user.username + splitword_one + row))
+                                                    callback_data="adelcat: " + row))
                 bot.reply_to(message, "Список категорій", reply_markup=markup)
         else:
             bot.reply_to(message, "У вас немає прав на цю дію!")
@@ -227,133 +226,162 @@ def deletecategory(message):
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("adelcat: "))
 def callback_query(call: types.CallbackQuery):
-    print(call.from_user.username)
-    info = str(call.data).replace("adelcat: ","")
-    print("Text: " + call.data)
-    info = info.split(splitword_one)
-    username = info[0]
-    category = info[1]
-    if username == call.from_user.username:
-        markup = InlineKeyboardMarkup()
-        item1 = InlineKeyboardButton(text="Так ✅",
-                                     callback_data="delcate: " + call.from_user.username + splitword_one + category)
-        item2 = InlineKeyboardButton(text="Ні ⛔",
-                                     callback_data="endoper: " + call.from_user.username)
-        markup.add(item1, item2)
-        bot.reply_to(call.message, 'Ви впевнені, що хочете видалити категорію та анекдоти, які відносяться до неї?.', reply_markup=markup)
+    if checkIfAdmin(str(call.from_user.username)):
+        print(call.from_user.username)
+        category = str(call.data).replace("adelcat: ", "")
+        # print("Text: " + call.data)
+        # info = info.split(splitword_one)
+        # username = info[0]
+        # category = info[1]
+        # if username == call.from_user.username:
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        item1 = types.KeyboardButton("Так ✅")
+        item2 = types.KeyboardButton("Ні ⛔")
+        markup.row(item1, item2)
+        # item1 = InlineKeyboardButton(text="Так ✅",
+        #                                  callback_data="delcate: " + call.from_user.username + splitword_one + category)
+        # item2 = InlineKeyboardButton(text="Ні ⛔",
+        #                                  callback_data="endoper: " + call.from_user.username)
+        # markup.add(item1, item2)
+        msg = bot.reply_to(call.message,
+                           'Ви впевнені, що хочете видалити категорію та анекдоти, які відносяться до неї?.',
+                           reply_markup=markup)
+        bot.register_next_step_handler(msg, delcategory, category, call.from_user.username)
+        # else:
+        #     bot.reply_to(call.message, f"Зараз черга @{username}.")
     else:
-        bot.reply_to(call.message, f"Зараз черга @{username}.")
+        print(f'{call.from_user.username} is not an admin')
 
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("delcate: "))
-def callback_query(call: types.CallbackQuery):
-    print(call.from_user.username)
-    info = str(call.data).replace("delcate: ","")
-    info = info.split(splitword_one)
-    username = info[0]
-    category = info[1]
-    if username == call.from_user.username:
-        if checkIfExistsCategory(category):
-            deleteAnegdotsByCategory(category)
-            deleteCategory(category)
-            bot.reply_to(call.message, "Категорію та анекдоти з неї успішно видалено")
-        else:
-            bot.reply_to(call.message, "Такої категорії не існує")
-    else:
-        bot.reply_to(call.message, f"Зараз черга @{username}.")
-
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("endoper: "))
-def callback_query(call: types.CallbackQuery):
-    print(call.from_user.username)
-    username = str(call.data).replace("endoper: ","")
-    if username == call.from_user.username:
+# @bot.callback_query_handler(func=lambda call: call.data.startswith("delcate: "))
+# def callback_query(call: types.CallbackQuery):
+def delcategory(message, category, username):
+    # print(call.from_user.username)
+    # info = str(call.data).replace("delcate: ","")
+    # info = info.split(splitword_one)
+    # username = info[0]
+    # category = info[1]
+    # if username == call.from_user.username:
+    if username == message.from_user.username:
+        if message.text == "Так ✅":
+            if checkIfExistsCategory(category):
+                deleteAnegdotsByCategory(category)
+                deleteCategory(category)
+                bot.reply_to(message, "Категорію та анекдоти з неї успішно видалено", reply_markup = types.ReplyKeyboardRemove())
+            else:
+                bot.reply_to(message, "Такої категорії не існує", reply_markup = types.ReplyKeyboardRemove())
+        elif message.text == "Ні ⛔":
             farewell = getFarewellAccoringToHours()
             print(farewell)
-            bot.reply_to(call.message, farewell)
+            bot.reply_to(message, farewell, reply_markup = types.ReplyKeyboardRemove())
+        else:
+            bot.register_next_step_handler(message, delcategory, category, username)
     else:
-        bot.reply_to(call.message, f"Зараз черга @{username}.")
+        msg = bot.reply_to(message, f"Зараз черга @{username}.")
+        bot.register_next_step_handler(msg, delcategory, category, username)
+
+
+# @bot.callback_query_handler(func=lambda call: call.data.startswith("endoper: "))
+# def callback_query(call: types.CallbackQuery):
+#     print(call.from_user.username)
+#     username = str(call.data).replace("endoper: ","")
+#     if username == call.from_user.username:
+#             farewell = getFarewellAccoringToHours()
+#             print(farewell)
+#             bot.reply_to(call.message, farewell)
+#     else:
+#         bot.reply_to(call.message, f"Зараз черга @{username}.")
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("addaneg: "))
 def callback_query(call: types.CallbackQuery):
-    info = str(call.data).replace("addaneg: ","")
-    info = info.split(splitword_one)
-    username = info[0]
-    category = info[1]
-    if username == call.from_user.username:
+    if checkIfAdmin(str(call.from_user.username)):
+        category = str(call.data).replace("addaneg: ", "")
+        # info = info.split(splitword_one)
+        # username = info[0]
+        # category = info[1]
+        # if username == call.from_user.username:
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
         item1 = types.KeyboardButton("🛑 Відмінити операцію!")
         markup.row(item1)
         msg = bot.reply_to(call.message, "Впишіть ваш анекдот", reply_markup=markup)
-        bot.register_next_step_handler(msg, addAnegdot, category, username)
+        bot.register_next_step_handler(msg, addAnegdot, category, call.from_user.username)
+        # else:
+        #     bot.reply_to(call.message, f"Зараз черга @{username}.")
     else:
-        bot.reply_to(call.message, f"Зараз черга @{username}.")
+        print(f'{call.from_user.username} is not an admin')
+
+
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("chorand: "))
 def callback_query(call: types.CallbackQuery):
-    info = str(call.data).replace("chorand: ","")
-    info = info.split(splitword_one)
-    username = info[0]
-    answer = info[1]
-    print(info)
-    print(call.from_user.username)
-    if username == call.from_user.username:
-        if answer == "readanegdotbycategory":
-            listOfCategories = getCategories()
-            if not listOfCategories:
-                bot.reply_to(call.message, "Ви ще не додали категорій")
-            elif checkIfNotExistAnedgots():
-                bot.reply_to(call.message, "Ви ще не додали анекдотів")
-            else:
-                markup = InlineKeyboardMarkup()
-                markup.width = 3
-                for row in listOfCategories:
-                    print(row)
-                    markup.add(InlineKeyboardButton(row, callback_data="randane: " + call.from_user.username + splitword_one + row))
-                bot.reply_to(call.message, "Оберіть категорію анекдота", reply_markup=markup)
-        elif answer == "readanegdot":
-            if checkIfNotExistAnedgots():
-                bot.reply_to(call.message, "Ви ще не додали анекдотів")
-            else:
-                bot.reply_to(call.message, getAnegdot())
-    else:
-        bot.reply_to(call.message, f"Зараз черга @{username}.")
+    answer = str(call.data).replace("chorand: ","")
+    # info = info.split(splitword_one)
+    # username = info[0]
+    # answer = info[1]
+    # print(info)
+    # print(call.from_user.username)
+    # if username == call.from_user.username:
+    if answer == "readanegdotbycategory":
+        listOfCategories = getCategories()
+        if not listOfCategories:
+            bot.reply_to(call.message, "Ви ще не додали категорій")
+        elif checkIfNotExistAnedgots():
+            bot.reply_to(call.message, "Ви ще не додали анекдотів")
+        else:
+            markup = InlineKeyboardMarkup()
+            markup.width = 3
+            for row in listOfCategories:
+                print(row)
+                markup.add(InlineKeyboardButton(row, callback_data="randane: " + row))
+            bot.reply_to(call.message, "Оберіть категорію анекдота", reply_markup=markup)
+    elif answer == "readanegdot":
+        if checkIfNotExistAnedgots():
+            bot.reply_to(call.message, "Ви ще не додали анекдотів")
+        else:
+            bot.reply_to(call.message, getAnegdot())
+    # else:
+    #     bot.reply_to(call.message, f"Зараз черга @{username}.")
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("randane: "))
 def callback_query(call: types.CallbackQuery):
-    info = str(call.data).replace("randane: ", "")
-    info = info.split(splitword_one)
-    username = info[0]
-    category = info[1]
-    if username == call.from_user.username:
-        if checkIfNotExistAnedgotsByCategory(category):
-            bot.reply_to(call.message, "Ви ще не додали анекдотів для цієї категорії")
-        else:
-            bot.reply_to(call.message, getAnegdotByCategory(category))
+    category = str(call.data).replace("randane: ", "")
+    # info = info.split(splitword_one)
+    # username = info[0]
+    # category = info[1]
+    # if username == call.from_user.username:
+    if checkIfNotExistAnedgotsByCategory(category):
+        bot.reply_to(call.message, "Ви ще не додали анекдотів для цієї категорії")
     else:
-        bot.reply_to(call.message, f"Зараз черга @{username}.")
+        bot.reply_to(call.message, getAnegdotByCategory(category))
+    # else:
+    #     bot.reply_to(call.message, f"Зараз черга @{username}.")
 
 
 
 def addAnegdot(message, category, username):
+    maxNumOfSymsForAnegdot = 510
     if username == message.from_user.username:
         if message.text == "🛑 Відмінити операцію!":
             farewell = getFarewellAccoringToHours()
             print(farewell)
             bot.reply_to(message, farewell, reply_markup=types.ReplyKeyboardRemove())
-        else:
+        elif len(str(message.text)) <= maxNumOfSymsForAnegdot:
             if checkIfExistsAnedgot(category, str(message.text)):
                 msg = bot.reply_to(message, "Анекдот уже існує, спробуйте надіслати щось нове!")
                 bot.register_next_step_handler(msg, addAnegdot, category, username)
             else:
                 addAnegdotToDb(message, category)
                 bot.reply_to(message, "Анекдот успішно доданий!", reply_markup=types.ReplyKeyboardRemove())
+        else:
+            msg = bot.reply_to(message, "Ви перевищили ліміт символів ( максимальна кількість - 510 ), спробуйте ще раз!")
+            bot.register_next_step_handler(msg, addAnegdot, category, username)
     else:
         msg = bot.reply_to(message, f"Зараз черга @{username}.")
         bot.register_next_step_handler(msg, addAnegdot, category, username)
+
 
 
 def checkIfNoneUserName(username):
