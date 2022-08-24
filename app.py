@@ -80,7 +80,40 @@ def start(message):
         print("No")
     else:
         if checkIfAdmin(str(message.from_user.username)):
-            bot.reply_to(message,"Команди для адміністрації: " + "\n" + "/addcategory - Додати категорію для анекдотів" + "\n" + "/addanegdot - Додати анекдот " + "\n" + "/deleteanegdot - Видалити анекдот " + "\n" + "/deletecategory - Видалити категорію")
+            info = "Команди для адміністрації: " + "\n" + "/addcategory - Додати категорію для анекдотів" + "\n" + "/addanegdot - Додати анекдот" + "\n" + "/deleteanegdot - Видалити анекдот" + "\n" + "/deletecategory - Видалити категорію"
+            if message.from_user.username == 'kreager':
+                info += "\n" + "/gettxtanegdot - Витягнути анекдоти з бази даних"
+            bot.reply_to(message,info)
+
+
+@bot.message_handler(commands=['gettxtanegdot'])
+def start(message):
+    private_chat_id = 256266717
+    if message.from_user.username == 'kreager':
+        if checkIfNotExistCategories():
+            bot.send_message(private_chat_id, "На жаль, у базі даних ще немає категорій")
+        else:
+            if checkIfNotExistAnedgots():
+                bot.send_message(private_chat_id, "На жаль, у базі даних ще немає анекдотів")
+            else:
+                with open('listAnegdots.txt', 'w', encoding='utf-8') as f:
+                    info = ""
+                    for row in getCategories():
+                        info += "Category: "
+                        info += row
+                        info += "\n"
+                        info += "List of anegdots: \n"
+                        if checkIfNotExistAnedgotsByCategory(row):
+                            info += "Анекдотів у цій категорії ще немає"
+                            info += "\n"
+                        else:
+                            for row in getAnegdotsByCategory(row):
+                                info += row
+                                info += "\n"
+                        info += "\n\n"
+                    print(info)
+                    f.write(info)
+                bot.send_document(private_chat_id, open(r'listAnegdots.txt', 'rb'))
 
 
 @bot.message_handler(commands=['addcategory'])
@@ -355,7 +388,7 @@ def callback_query(call: types.CallbackQuery):
     if checkIfNotExistAnedgotsByCategory(category):
         bot.reply_to(call.message, "Ви ще не додали анекдотів для цієї категорії")
     else:
-        bot.reply_to(call.message, getAnegdotByCategory(category))
+        bot.reply_to(call.message, getRandomAnegdotByCategory(category))
     # else:
     #     bot.reply_to(call.message, f"Зараз черга @{username}.")
 

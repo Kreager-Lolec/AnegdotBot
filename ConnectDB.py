@@ -198,7 +198,7 @@ def getAnegdot():
     return anegdot
 
 
-def getAnegdotByCategory(categoryname):
+def getRandomAnegdotByCategory(categoryname):
     categoryNameLogical = proccesAnegdotOrCategoryName(categoryname)
     mycursor = mydb.cursor()
     mycursor.execute(f'''SELECT * FROM ANEGDOTS WHERE CategoryNameLogical = N'{categoryNameLogical}' ''')
@@ -209,6 +209,18 @@ def getAnegdotByCategory(categoryname):
     print(listAnegdots)
     anegdot = random.choice(listAnegdots)
     return anegdot
+
+
+def getAnegdotsByCategory(categoryname):
+    categoryNameLogical = proccesAnegdotOrCategoryName(categoryname)
+    mycursor = mydb.cursor()
+    mycursor.execute(f'''SELECT * FROM ANEGDOTS WHERE CategoryNameLogical = N'{categoryNameLogical}' ''')
+    info = mycursor.fetchall()
+    listAnegdots = []
+    for row in info:
+        listAnegdots.append(row[1])
+    print(listAnegdots)
+    return listAnegdots
 
 
 def deleteCategory(category):
@@ -264,6 +276,7 @@ def proccesAnegdotOrCategoryName(name):
 
 def DropTable():
     mycursor = mydb.cursor()
-    mycursor.execute('''DROP TABLE ANEGDOTS''')
+    # mycursor.execute('''DROP TABLE ANEGDOTS''')
+    mycursor.execute('''DROP TABLE ADMINS''')
     mydb.commit()
     mycursor.close()
