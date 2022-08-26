@@ -9,6 +9,10 @@ import os
 roleName = ['Юнлінг', 'Падаван', 'Лицар-джедай', 'гранд-майстер Ордена джедаїв']
 listRights = ['gettxtanegdot', 'gettxtadmins', 'addcategory', 'addanegdot', 'deleteanegdot', 'deletecategory',
               'addadmin', 'deleteadmin']
+listUnlingRights = listRights[2] + ";" + listRights[3]
+listPadavanRights = listUnlingRights + ";" + listRights[4] + ";" + listRights[5]
+listJediKnightRights = listRights[0] + ";" + listRights[1] + ";" + listPadavanRights
+listGrandMasterRights = listJediKnightRights + ";" + listRights[6] + ";" + listRights[7]
 
 TOKEN = Keys.API_KEY
 bot = telebot.TeleBot(TOKEN)
@@ -246,7 +250,7 @@ def addrole(message, newAdminUserName, userName):
                          reply_markup=types.ReplyKeyboardRemove())
             getAdminListByRole(role)
     else:
-        msg = bot.reply_to(message, f"Зараз черга @{username}.")
+        msg = bot.reply_to(message, f"Зараз черга @{userName}.")
         bot.register_next_step_handler(msg, addAdmin, newAdminUserName, userName)
 
 
