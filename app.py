@@ -6,7 +6,9 @@ from ConnectDB import *
 from flask import Flask, request
 import os
 
-
+roleName = ['Юнлінг', 'Падаван', 'Лицар-джедай', 'гранд-майстер Ордена джедаїв']
+listRights = ['gettxtanegdot', 'gettxtadmins', 'addcategory', 'addanegdot', 'deleteanegdot', 'deletecategory',
+              'addadmin', 'deleteadmin']
 
 TOKEN = Keys.API_KEY
 bot = telebot.TeleBot(TOKEN)
