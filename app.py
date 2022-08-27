@@ -6,13 +6,6 @@ from ConnectDB import *
 from flask import Flask, request
 import os
 
-roleName = ['Юнлінг', 'Падаван', 'Лицар-джедай', 'гранд-майстер Ордена джедаїв']
-listRights = ['gettxtanegdot', 'gettxtadmins', 'addcategory', 'addanegdot', 'deleteanegdot', 'deletecategory',
-              'addadmin', 'deleteadmin']
-listUnlingRights = listRights[2] + ";" + listRights[3]
-listPadavanRights = listUnlingRights + ";" + listRights[4] + ";" + listRights[5]
-listJediKnightRights = listRights[0] + ";" + listRights[1] + ";" + listPadavanRights
-listGrandMasterRights = listJediKnightRights + ";" + listRights[6] + ";" + listRights[7]
 
 TOKEN = Keys.API_KEY
 bot = telebot.TeleBot(TOKEN)
@@ -25,6 +18,12 @@ print("Бот стартує")
 CreateTable()
 splitword_one = '@;'
 splitword_two = '@38)89'
+roleName = ['Юнлінг', 'Падаван', 'Лицар-джедай', 'гранд-майстер Ордена джедаїв']
+listRights = ['gettxtanegdot', 'gettxtadmins', 'addcategory', 'addanegdot', 'deleteanegdot', 'deletecategory', 'controladmin', 'inserttxtanegdottodb','inserttxtadminstodb']
+listUnlingRights = listRights[2] + ";" + listRights[3]
+listPadavanRights = listUnlingRights + ";" + listRights[4] + ";" + listRights[5]
+listJediKnightRights = listRights[0] + ";" + listRights[1] + ";" + listPadavanRights
+listGrandMasterRights = listJediKnightRights + ";" + listRights[6] + ";" + listRights[7] + ";" + listRights[8]
 
 
 def getCurrentHour():
@@ -91,10 +90,6 @@ def cmd(message):
             info = ""
             adminRights = str(GetAdminRights(message.from_user.username))
             print("AdminRights: " + adminRights)
-            listUnlingRights = listRights[2] + ";" + listRights[3]
-            listPadavanRights = listUnlingRights + ";" + listRights[4] + ";" + listRights[5]
-            listJediKnightRights = listRights[0] + ";" + listRights[1] + ";" + listPadavanRights
-            listGrandMasterRights = listJediKnightRights + ";" + listRights[6] + ";" + listRights[7]
             if listUnlingRights in adminRights:
                 info += "Команди для адміністрації: " + "\n" + "/addcategory - Додати категорію для анекдотів" + "\n" + "/addanegdot - Додати анекдот" + "\n"
             if listPadavanRights in adminRights:
@@ -102,7 +97,7 @@ def cmd(message):
             if listJediKnightRights in adminRights:
                 info += "/gettxtanegdot - Витягнути анекдоти з бази даних" + "\n" + "/gettxtadmins - Витягнути адмінів з бази даних" + "\n"
             if listGrandMasterRights in adminRights:
-                info += "/controladmin - Контролюєм адмінів!" + "\n"
+                info += "/controladmin - Контролюєм адмінів!" + "\n" + "/inserttxtanegdottodb - Затягнути анекдоти в базу даних" + "\n" + "/inserttxtadminstodb - Затягнути адмінів в базу даних"
             bot.reply_to(message,info)
 
 
@@ -114,8 +109,6 @@ def controladmin(message):
         if checkIfAdmin(str(message.from_user.username)):
             adminRights = str(GetAdminRights(message.from_user.username))
             print("AdminRights: " + adminRights)
-            listGrandMasterRights = listJediKnightRights + ";" + listRights[6] + ";" + listRights[7]
-            print("GrandMasterRights: " + listGrandMasterRights)
             if listGrandMasterRights in adminRights:
                 markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
                 item1 = types.KeyboardButton("🛑 Відмінити операцію!")
@@ -259,8 +252,6 @@ def gettxtanegdot(message):
     private_chat_id = message.from_user.id
     if checkIfAdmin(str(message.from_user.username)):
         adminRights = str(GetAdminRights(message.from_user.username))
-        # print("AdminRights: " + adminRights)
-        listJediKnightRights = listRights[0] + ";" + listRights[1] + ";" + listPadavanRights
         if listJediKnightRights in adminRights:
             if checkIfNotExistCategories():
                 bot.send_message(private_chat_id, "На жаль, у базі даних ще немає категорій")
@@ -268,29 +259,181 @@ def gettxtanegdot(message):
                 if checkIfNotExistAnedgots():
                     bot.send_message(private_chat_id, "На жаль, у базі даних ще немає анекдотів")
                 else:
-                    with open('listAnegdots.txt', 'w', encoding='utf-8') as f:
-                        info = ""
-                        for row in getFullInfoCategories():
-                            info += "Category: " + row[1]
+                    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+                    item1 = types.KeyboardButton("Для перегляду")
+                    item2 = types.KeyboardButton("Для бази даних")
+                    item3 = types.KeyboardButton("🛑 Відмінити операцію!")
+                    markup.row(item1, item2)
+                    markup.row(item3)
+                    msg = bot.send_message(private_chat_id, "Для чого вам потрібен файл", reply_markup=markup)
+                    bot.register_next_step_handler(msg, gettxtfileanegdot,message.from_user.username)
+
+
+def gettxtfileanegdot(message, username):
+    if message.from_user.username == username:
+        with open('listAnegdots.txt', 'w', encoding='utf-8') as f:
+            info = ""
+            if message.text == "Для перегляду":
+                for row in getFullInfoCategories():
+                    info += "Category: " + row[1]
+                    info += " | "
+                    info += "Who added: " + row[3]
+                    # info += " Time, when added: " + row[4]
+                    info += "\n"
+                    info += "List of anegdots: \n"
+                    if checkIfNotExistAnedgotsByCategory(row[1]):
+                        info += "Анекдотів у цій категорії ще немає"
+                        info += "\n"
+                    else:
+                        for row in getFullInfoAnegdotsByCategory(row[1]):
+                            info += "Anegdot: " + row[1]
                             info += " | "
-                            info += "Who added: " + row[3]
-                            # info += " Time, when added: " + row[4]
+                            info += "Who added: " + row[5]
+                            # info += " Time, when added: " + row[6]
                             info += "\n"
-                            info += "List of anegdots: \n"
-                            if checkIfNotExistAnedgotsByCategory(row[1]):
-                                info += "Анекдотів у цій категорії ще немає"
-                                info += "\n"
-                            else:
-                                for row in getFullInfoAnegdotsByCategory(row[1]):
-                                    info += "Anegdot: " + row[1]
-                                    info += " | "
-                                    info += "Who added: " + row[5]
-                                    # info += " Time, when added: " + row[6]
-                                    info += "\n"
-                            info += "\n\n"
-                        print(info)
-                        f.write(info)
-                    bot.send_document(private_chat_id, open(r'listAnegdots.txt', 'rb'))
+                    info += "\n\n"
+            elif message.text == "Для бази даних":
+                for row in getFullInfoCategories():
+                    info += "Category: " + row[1] + ";" + row[3] + ";" + row[4]
+                    # info += " Time, when added: " + row[4]
+                    info += "\n"
+                    for row in getFullInfoAnegdotsByCategory(row[1]):
+                        info += "Anegdot: " + row[1] + ";" + row[3] + ";" + row[5] + ";" + row[6]
+                        info += "\n"
+            elif message.text == "🛑 Відмінити операцію!":
+                farewell = getFarewellAccoringToHours()
+                print(farewell)
+                bot.reply_to(message, farewell, reply_markup=types.ReplyKeyboardRemove())
+            else:
+                bot.register_next_step_handler(message, gettxtfileanegdot, username)
+            print(info)
+            f.write(info)
+        bot.send_document(message.from_user.id, open(r'listAnegdots.txt', 'rb'), reply_markup=types.ReplyKeyboardRemove())
+
+
+@bot.message_handler(commands=['inserttxtanegdottodb'])
+def inserttxtanegdottodb(message):
+    if checkIfAdmin(str(message.from_user.username)):
+        adminRights = str(GetAdminRights(message.from_user.username))
+        if listGrandMasterRights in adminRights:
+            markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+            item1 = types.KeyboardButton("🛑 Відмінити операцію!")
+            markup.row(item1)
+            private_chat_id = message.from_user.id
+            msg = bot.send_message(private_chat_id, "Пришліть текстовий файл з анекдотами", reply_markup=markup)
+            bot.register_next_step_handler(msg,handle_document_anegdot,message.from_user.username)
+
+
+def handle_document_anegdot(message,username):
+    if message.from_user.username == username:
+        if message.text == "🛑 Відмінити операцію!":
+            farewell = getFarewellAccoringToHours()
+            print(farewell)
+            bot.reply_to(message, farewell, reply_markup=types.ReplyKeyboardRemove())
+        else:
+            try:
+                file_name = message.document.file_name
+                file_info = bot.get_file(message.document.file_id)
+                downloaded_file = bot.download_file(file_info.file_path)
+                with open("listAnegdotsProcces.txt", 'wb') as new_file:
+                    print(downloaded_file)
+                    new_file.write(downloaded_file)
+                proccesDocumentAnegdot(message, username)
+                bot.reply_to(message, "Анекдоти успішно затягнуто!")
+            except:
+                msg = bot.reply_to(message, "Пришліть будь ласка текстовий файл!")
+                bot.register_next_step_handler(msg, handle_document_anegdot, username)
+
+
+
+
+@bot.message_handler(commands=['inserttxtadminstodb'])
+def inserttxtadminstodb(message):
+    if checkIfAdmin(str(message.from_user.username)):
+        adminRights = str(GetAdminRights(message.from_user.username))
+        if listGrandMasterRights in adminRights:
+            markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+            item1 = types.KeyboardButton("🛑 Відмінити операцію!")
+            markup.row(item1)
+            private_chat_id = message.from_user.id
+            msg = bot.send_message(private_chat_id, "Пришліть текстовий файл зі списком адмінів")
+            bot.register_next_step_handler(msg,handle_document_admin, message.from_user.username)
+
+
+def handle_document_admin(message, username):
+    if message.from_user.username == username:
+        if message.text == "🛑 Відмінити операцію!":
+            farewell = getFarewellAccoringToHours()
+            print(farewell)
+            bot.reply_to(message, farewell, reply_markup=types.ReplyKeyboardRemove())
+        else:
+            try:
+                file_info = bot.get_file(message.document.file_id)
+                downloaded_file = bot.download_file(file_info.file_path)
+                with open("listAdminsProcces.txt", 'wb') as new_file:
+                    # print(downloaded_file)
+                    new_file.write(downloaded_file)
+                proccesDocumentAdmin(message, username)
+                bot.reply_to(message, "Адміністратори успішно затягнуті!")
+            except:
+                msg = bot.reply_to(message, "Пришліть будь ласка текстовий файл!")
+                bot.register_next_step_handler(msg, handle_document_admin, username)
+
+
+def proccesDocumentAdmin(message, username):
+    with open("listAdminsProcces.txt", 'r', encoding="utf8") as fileAdmin:
+        lines = fileAdmin.readlines()
+        try:
+            for row in lines:
+                if "List of admins: " in row:
+                    listAdmins = row.replace("\n", "")
+                    listAdmins = listAdmins.replace("List of admins: ", "")
+                    # print("RowFileAdmin:" + listAdmins)
+                    listAdmins = listAdmins.split(";")
+                    for row in listAdmins:
+                        if not checkIfAdmin(row) and not row == "":
+                            addAdminToDb(row)
+                else:
+                    roleLine = row.replace("\n", "")
+                    roleLine = roleLine.split("/")
+                    print("Roleline: ")
+                    print(roleLine)
+                    role = roleLine[0]
+                    listAdmins = roleLine[1].split(";")
+                    print("ListAdmins:: ")
+                    print(listAdmins)
+                    listRights = roleLine[2]
+                    for admin in listAdmins:
+                        if not checkIfAdminHaveRole(admin, role) and not admin == "":
+                            print("admin:" + admin)
+                            addAdminRole(admin, role)
+        except:
+            msg = bot.reply_to(message, "Отакої, щось трапилось не так, пришліть текстовий файл ще раз!")
+            bot.register_next_step_handler(msg, handle_document_admin, username)
+
+
+def proccesDocumentAnegdot(message, username):
+    with open("listAnegdotsProcces.txt", 'r', encoding="utf8") as fileAnegdot:
+        lines = fileAnegdot.readlines()
+        try:
+            for row in lines:
+                if "Category: " in row:
+                    category = row.replace("\n", "")
+                    category = category.replace("Category: ", "")
+                    # print("RowFileAdmin:" + listAdmins)
+                    categoryData = category.split(";")
+                    if not checkIfExistsCategory(categoryData[0]):
+                        addCategoryUsingTxt(categoryData[0], categoryData[1], categoryData[2])
+                elif "Anegdot: " in row:
+                    anegdot = row.replace("\n", "")
+                    anegdot = anegdot.replace("Anegdot: ", "")
+                    anegdotData = anegdot.split(";")
+                    if not checkIfExistsAnedgot(anegdotData[0], anegdotData[1]):
+                        addAnegdotToDbUsingTxt(anegdotData[0], anegdotData[1], anegdotData[2], anegdotData[3])
+        except:
+            msg = bot.reply_to(message, "Отакої, щось трапилось не так, пришліть текстовий файл ще раз!")
+            bot.register_next_step_handler(msg, handle_document_admin, username)
+
 
 
 @bot.message_handler(commands=['gettxtadmins'])
@@ -298,32 +441,58 @@ def gettxtadmins(message):
     private_chat_id = message.from_user.id
     if checkIfAdmin(str(message.from_user.username)):
         adminRights = str(GetAdminRights(message.from_user.username))
-        # print("AdminRights: " + adminRights)
-        listJediKnightRights = listRights[0] + ";" + listRights[1] + ";" + listPadavanRights
         if listJediKnightRights in adminRights:
-            print("Прикол")
-            with open('listAdmins.txt', 'w', encoding='utf-8') as f:
-                info = ""
-                info += "List of admins: \n\n"
-                for row in GetListOfAdmins():
-                    info += "UserName: " + row
-                    info += " | "
-                    info += "Role: " + GetRole(row) + "\n\n"
-                    print(info)
-                f.write(info)
-            bot.send_document(private_chat_id, open(r'listAdmins.txt', 'rb'))
+            markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+            item1 = types.KeyboardButton("Для перегляду")
+            item2 = types.KeyboardButton("Для бази даних")
+            item3 = types.KeyboardButton("🛑 Відмінити операцію!")
+            markup.row(item1, item2)
+            markup.row(item3)
+            msg = bot.send_message(private_chat_id, "Для чого вам потрібен файл", reply_markup=markup)
+            bot.register_next_step_handler(msg, gettxtfileadmin, message.from_user.username)
+
+
+def gettxtfileadmin(message, username):
+    if message.from_user.username == username:
+        with open('listAnegdots.txt', 'w', encoding='utf-8') as f:
+            info = ""
+            if message.text == "Для перегляду":
+                with open('listAdmins.txt', 'w', encoding='utf-8') as f:
+                    info = ""
+                    info += "List of admins: \n\n"
+                    for row in GetListOfAdmins():
+                        info += "UserName: " + row
+                        info += " | "
+                        info += "Role: " + GetRole(row) + "\n\n"
+                        print(info)
+                    f.write(info)
+                bot.send_document(message.from_user.id, open(r'listAdmins.txt', 'rb'), reply_markup=types.ReplyKeyboardRemove())
+            elif message.text == "Для бази даних":
+                with open('listAdmins.txt', 'w', encoding='utf-8') as f:
+                    info = ""
+                    info += "List of admins: "
+                    for row in GetListOfAdmins():
+                        info += row + ";"
+                    info += "\n"
+                    for row in GetRoleAdminsAll():
+                        info += row[1] + "/" + row[2] + "/" + row[3] + "\n"
+                    f.write(info)
+                bot.send_document(message.from_user.id, open(r'listAdmins.txt', 'rb'), reply_markup=types.ReplyKeyboardRemove())
+            elif message.text == "🛑 Відмінити операцію!":
+                farewell = getFarewellAccoringToHours()
+                print(farewell)
+                bot.reply_to(message, farewell, reply_markup=types.ReplyKeyboardRemove())
+            else:
+                bot.register_next_step_handler(message, gettxtfileadmin, username)
 
 
 @bot.message_handler(commands=['addcategory'])
 def addcategory(message):
-    rights = 0
     if checkIfNoneUserName(message.from_user.username):
         bot.reply_to(message, "Для початку створіть собі username.")
     else:
         if checkIfAdmin(str(message.from_user.username)):
             adminRights = str(GetAdminRights(message.from_user.username))
-            # print("AdminRights: " + adminRights)
-            listUnlingRights = listRights[2] + ";" + listRights[3]
             if listUnlingRights in adminRights:
                 AddChat(message)
                 markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -371,8 +540,6 @@ def addanegdot(message):
     else:
         if checkIfAdmin(str(message.from_user.username)):
             adminRights = str(GetAdminRights(message.from_user.username))
-            # print("AdminRights: " + adminRights)
-            listUnlingRights = listRights[2] + ";" + listRights[3]
             if listUnlingRights in adminRights:
                 AddChat(message)
                 if checkIfNotExistCategories():
@@ -392,14 +559,11 @@ def addanegdot(message):
 
 @bot.message_handler(commands=['deleteanegdot'])
 def removeanegdot(message):
-    rights = 0
     if checkIfNoneUserName(message.from_user.username):
         bot.reply_to(message, "Для початку створіть собі username.")
     else:
         if checkIfAdmin(str(message.from_user.username)):
             adminRights = str(GetAdminRights(message.from_user.username))
-            print("AdminRights: " + adminRights)
-            listPadavanRights = listUnlingRights + ";" + listRights[4] + ";" + listRights[5]
             if listPadavanRights in adminRights:
                 AddChat(message)
                 deleteNoneAnegdots()

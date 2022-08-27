@@ -1,0 +1,5 @@
+List of admins: mihailik_panchuk;kreager;Barik_superman;
+Юнлінг//addcategory;addanegdot
+Падаван/Barik_superman;/addcategory;addanegdot;deleteanegdot;deletecategory
+Лицар-джедай/mihailik_panchuk;/gettxtanegdot;gettxtadmins;addcategory;addanegdot;deleteanegdot;deletecategory
+гранд-майстер Ордена джедаїв/kreager;/gettxtanegdot;gettxtadmins;addcategory;addanegdot;deleteanegdot;deletecategory;controladmin;inserttxtanegdottodb;inserttxtadminstodb

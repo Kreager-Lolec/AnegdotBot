@@ -70,27 +70,28 @@ def insertRoles():
     listadmin = ['mihailik_panchuk;', 'kreager;', 'Barik_superman;']
     roleName = ['Юнлінг', 'Падаван', 'Лицар-джедай', 'гранд-майстер Ордена джедаїв']
     listRights = ['gettxtanegdot', 'gettxtadmins', 'addcategory', 'addanegdot', 'deleteanegdot', 'deletecategory',
-                  'addadmin', 'deleteadmin']
-    mycursor = mydb.cursor()
+                  'controladmin', 'inserttxtanegdottodb', 'inserttxtadminstodb']
     listUnlingRights = listRights[2] + ";" + listRights[3]
+    listPadavanRights = listUnlingRights + ";" + listRights[4] + ";" + listRights[5]
+    listJediKnightRights = listRights[0] + ";" + listRights[1] + ";" + listPadavanRights
+    listGrandMasterRights = listJediKnightRights + ";" + listRights[6] + ";" + listRights[7] + ";" + listRights[
+        8]
+    mycursor = mydb.cursor()
     mycursor.execute(f'''INSERT INTO ROLES_ADMIN (roleName, listAdmins, Listrights)
     SELECT N'{roleName[0]}', '', N'{listUnlingRights}'
     WHERE
         NOT EXISTS (SELECT * FROM ROLES_ADMIN WHERE roleName = N'{roleName[0]}' ) ''')
     mydb.commit()
-    listPadavanRights = listUnlingRights + ";" + listRights[4] + ";" + listRights[5]
     mycursor.execute(f'''INSERT INTO ROLES_ADMIN (roleName, listAdmins, Listrights)
     SELECT N'{roleName[1]}', N'{listadmin[2]}', N'{listPadavanRights}'
     WHERE
         NOT EXISTS (SELECT * FROM ROLES_ADMIN WHERE roleName = N'{roleName[1]}' ) ''')
     mydb.commit()
-    listJediKnightRights = listRights[0] + ";" + listRights[1] + ";" + listPadavanRights
     mycursor.execute(f'''INSERT INTO ROLES_ADMIN (roleName, listAdmins, Listrights)
     SELECT N'{roleName[2]}', N'{listadmin[0]}', N'{listJediKnightRights}'
     WHERE
         NOT EXISTS (SELECT * FROM ROLES_ADMIN WHERE roleName = N'{roleName[2]}' ) ''')
     mydb.commit()
-    listGrandMasterRights = listJediKnightRights + ";" + listRights[6] + ";" + listRights[7]
     mycursor.execute(f'''INSERT INTO ROLES_ADMIN (roleName, listAdmins, Listrights)
     SELECT N'{roleName[3]}', N'{listadmin[1]}', N'{listGrandMasterRights}'
     WHERE
@@ -140,18 +141,18 @@ def removeAdminRole(adminUserName,role):
 def getAdminListByRole(role):
     mycursor = mydb.cursor()
     mycursor.execute(f'''SELECT listAdmins FROM ROLES_ADMIN WHERE roleName = N'{role}' ''')
-    info = str(mycursor.fetchone()[0])
-    print("List Admins: " + info)
+    info = mycursor.fetchone()[0]
+    print("Admin: " + info)
     return info
 
 
 def checkIfAdminHaveRole(adminUserName,role):
     mycursor = mydb.cursor()
     mycursor.execute(f'''SELECT listAdmins FROM ROLES_ADMIN WHERE roleName = N'{role}' ''')
-    listAdminds = str(mycursor.fetchone())
+    listAdminds = mycursor.fetchone()[0]
     mycursor.execute(f'''SELECT RoleName FROM ROLES_ADMIN WHERE roleName = N'{role}' ''')
-    RoleName = str(mycursor.fetchone())
-    print("List Admins: "  + listAdminds + " Role: " + RoleName)
+    RoleName = mycursor.fetchone()[0]
+    # print("Admin: " + listAdminds + " Role: " + RoleName)
     if adminUserName in listAdminds:
         return True
     else:
@@ -187,6 +188,13 @@ def GetAdminRights(adminUserName):
         if checkIfAdminHaveRole(adminUserName,row[1]):
             # print(row[3])
             return row[3]
+
+
+def GetRoleAdminsAll():
+    mycursor = mydb.cursor()
+    mycursor.execute(f'''SELECT * FROM ROLES_ADMIN ''')
+    info = mycursor.fetchall()
+    return info
 
 
 def checkIfAdmin(username):
@@ -284,6 +292,18 @@ def addCategory(message):
     mycursor.close()
 
 
+def addCategoryUsingTxt(category,userName,time):
+    categoryNameDisplay = str(category).strip(" ")
+    categoryNameLogical = proccesAnegdotOrCategoryName(categoryNameDisplay)
+    mycursor = mydb.cursor()
+    mycursor.execute(f'''INSERT INTO CATEGORIES (CategoryNameDisplay, CategoryNameLogical, UserNameAdded, TimeAdded)
+    SELECT N'{categoryNameDisplay}', N'{categoryNameLogical}', N'{userName}', N'{time}'
+    WHERE
+        NOT EXISTS (SELECT * FROM CATEGORIES WHERE CategoryNameLogical = N'{categoryNameLogical}') ''')
+    mydb.commit()
+    mycursor.close()
+
+
 def addAnegdotToDb(message, category):
     categoryNameDisplay = category.strip(" ")
     categoryNameLogical = proccesAnegdotOrCategoryName(categoryNameDisplay)
@@ -292,6 +312,20 @@ def addAnegdotToDb(message, category):
     userName = message.from_user.username
     time = datetime.now()
     time = str(time.strftime("%H:%M:%S %d-%m-%y"))
+    mycursor = mydb.cursor()
+    mycursor.execute(f'''INSERT INTO ANEGDOTS (AnegdotDisplay,AnegdotLogical,CategoryNameDisplay,CategoryNameLogical,UserNameAdded,TimeAdded)
+    SELECT N'{anegdotDisplay}',N'{anegdotLogical}', N'{categoryNameDisplay}', N'{categoryNameLogical}', N'{userName}', N'{time}'
+    WHERE
+        NOT EXISTS (SELECT * FROM ANEGDOTS WHERE CategoryNameLogical = N'{categoryNameLogical}' AND AnegdotLogical = N'{anegdotLogical}')''')
+    mydb.commit()
+    mycursor.close()
+
+
+def addAnegdotToDbUsingTxt(anegdot, category, userName, time):
+    categoryNameDisplay = category.strip(" ")
+    categoryNameLogical = proccesAnegdotOrCategoryName(categoryNameDisplay)
+    anegdotDisplay = anegdot.strip(" ")
+    anegdotLogical = proccesAnegdotOrCategoryName(anegdotDisplay)
     mycursor = mydb.cursor()
     mycursor.execute(f'''INSERT INTO ANEGDOTS (AnegdotDisplay,AnegdotLogical,CategoryNameDisplay,CategoryNameLogical,UserNameAdded,TimeAdded)
     SELECT N'{anegdotDisplay}',N'{anegdotLogical}', N'{categoryNameDisplay}', N'{categoryNameLogical}', N'{userName}', N'{time}'
@@ -435,9 +469,9 @@ def proccesAnegdotOrCategoryName(name):
 
 def DropTable():
     mycursor = mydb.cursor()
-    # mycursor.execute('''DROP TABLE ANEGDOTS''')
-    # mycursor.execute('''DROP TABLE CATEGORIES''')
-    mycursor.execute('''DROP TABLE ADMINS''')
-    mycursor.execute('''DROP TABLE ROLES_ADMIN''')
+    mycursor.execute('''DROP TABLE ANEGDOTS''')
+    mycursor.execute('''DROP TABLE CATEGORIES''')
+    # mycursor.execute('''DROP TABLE ADMINS''')
+    # mycursor.execute('''DROP TABLE ROLES_ADMIN''')
     mydb.commit()
     mycursor.close()
