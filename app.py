@@ -649,7 +649,6 @@ def deletecategory(message):
         if checkIfAdmin(str(message.from_user.username)):
             adminRights = str(GetAdminRights(message.from_user.username))
             print("AdminRights: " + adminRights)
-            listPadavanRights = listUnlingRights + ";" + listRights[4] + ";" + listRights[5]
             if listPadavanRights in adminRights:
                 AddChat(message)
                 markup = InlineKeyboardMarkup()
