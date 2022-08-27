@@ -201,18 +201,20 @@ def removerole(message, deleteAdminUserName, userName):
         role = str(message.text)
         deleteAdminUserNameProcces = str(deleteAdminUserName).strip(" ")
         deleteAdminUserNameProcces = str(deleteAdminUserNameProcces).replace("@","")
-        if message.text == "Забрати усі права.":
-            deleteAdmin(deleteAdminUserNameProcces)
-            removeAdminRoleWhileSetNew(deleteAdminUserNameProcces)
-            bot.reply_to(message, f'У адміна {deleteAdminUserName} успішно забрано права за порушення ПСР (Правил Смішного Руху)',
-                         reply_markup=types.ReplyKeyboardRemove())
-            getAdminListByRole(role)
-        elif checkIfAdminHaveRole(deleteAdminUserNameProcces,role):
-            deleteAdmin(deleteAdminUserNameProcces)
-            removeAdminRole(deleteAdminUserNameProcces, role)
-            bot.reply_to(message, f'Адміна {deleteAdminUserName} успішно знято з ролі {role}',
-                         reply_markup=types.ReplyKeyboardRemove())
-            getAdminListByRole(role)
+        if checkIfAdminHaveRole(deleteAdminUserNameProcces, role):
+            if message.text == "Забрати усі права.":
+                deleteAdmin(deleteAdminUserNameProcces)
+                removeAdminRoleWhileSetNew(deleteAdminUserNameProcces)
+                bot.reply_to(message,
+                             f'У адміна {deleteAdminUserName} успішно забрано права за порушення ПСР (Правил Смішного Руху)',
+                             reply_markup=types.ReplyKeyboardRemove())
+                getAdminListByRole(role)
+            else:
+                deleteAdmin(deleteAdminUserNameProcces)
+                removeAdminRole(deleteAdminUserNameProcces, role)
+                bot.reply_to(message, f'Адміна {deleteAdminUserName} успішно знято з ролі {role}',
+                             reply_markup=types.ReplyKeyboardRemove())
+                getAdminListByRole(role)
         else:
             msg = bot.reply_to(message, f"Адміна {deleteAdminUserName} з такою роллю {role} не існує.", reply_markup=types.ReplyKeyboardRemove())
     else:
