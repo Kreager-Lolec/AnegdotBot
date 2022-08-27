@@ -14,15 +14,13 @@ server = Flask(__name__)
 
 print("Бот стартує")
 CreateTable()
-print("Бот стартує")
-CreateTable()
 splitword_one = '@;'
 splitword_two = '@38)89'
 roleName = ['Юнлінг', 'Падаван', 'Лицар-джедай', 'гранд-майстер Ордена джедаїв']
-listRights = ['gettxtanegdot', 'gettxtadmins', 'addcategory', 'addanegdot', 'deleteanegdot', 'deletecategory', 'controladmin', 'inserttxtanegdottodb','inserttxtadminstodb']
-listUnlingRights = listRights[2] + ";" + listRights[3]
-listPadavanRights = listUnlingRights + ";" + listRights[4] + ";" + listRights[5]
-listJediKnightRights = listRights[0] + ";" + listRights[1] + ";" + listPadavanRights
+listRights = ['addcategory', 'addanegdot', 'deletecategory', 'deleteanegdot', 'gettxtanegdot', 'gettxtadmins', 'controladmin', 'inserttxtcategoriesandanegdotstodb', 'inserttxtadminstodb']
+listUnlingRights = listRights[0] + ";" + listRights[1]
+listPadavanRights = listUnlingRights + ";" + listRights[2] + ";" + listRights[3]
+listJediKnightRights = listPadavanRights + ";" + listRights[4] + ";" + listRights[5]
 listGrandMasterRights = listJediKnightRights + ";" + listRights[6] + ";" + listRights[7] + ";" + listRights[8]
 
 
@@ -97,7 +95,7 @@ def cmd(message):
             if listJediKnightRights in adminRights:
                 info += "/gettxtanegdot - Витягнути анекдоти з бази даних" + "\n" + "/gettxtadmins - Витягнути адмінів з бази даних" + "\n"
             if listGrandMasterRights in adminRights:
-                info += "/controladmin - Контролюєм адмінів!" + "\n" + "/inserttxtanegdottodb - Затягнути анекдоти в базу даних" + "\n" + "/inserttxtadminstodb - Затягнути адмінів в базу даних"
+                info += "/controladmin - Контролюєм адмінів!" + "\n" + "/inserttxtcategoriesandanegdotstodb - Затягнути категорії та анекдоти в базу даних" + "\n" + "/inserttxtadminstodb - Затягнути адмінів в базу даних"
             bot.reply_to(message,info)
 
 
@@ -157,14 +155,21 @@ def callback_query(call: types.CallbackQuery):
 def callback_query(call: types.CallbackQuery):
     if checkIfAdmin(str(call.from_user.username)):
         deleteAdminUserName = str(call.data).replace("remoadm: ", "")
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        item1 = types.KeyboardButton("Так ✅")
-        item2 = types.KeyboardButton("Ні ⛔")
-        markup.row(item1, item2)
-        msg = bot.reply_to(call.message,
-                           'Ви впевнені?',
-                           reply_markup=markup)
-        bot.register_next_step_handler(msg, removeAdmin, deleteAdminUserName, call.from_user.username)
+        if deleteAdminUserName == "@kreager" and call.from_user.username == "kreager":
+            msg = bot.reply_to(call.message,"Гранд-Майстре, якщо ви хочете себе вбити, то скажіть @alexagranv ще раз, що вона вам подобається.")
+            bot.register_next_step_handler(msg, controlAdminPanel, call.from_user.username)
+        elif deleteAdminUserName == "@kreager":
+            msg = bot.reply_to(call.message,"У вас недостатньо сили, щоб зкинути Гранд-Майстра")
+            bot.register_next_step_handler(msg, controlAdminPanel, call.from_user.username)
+        else:
+            markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+            item1 = types.KeyboardButton("Так ✅")
+            item2 = types.KeyboardButton("Ні ⛔")
+            markup.row(item1, item2)
+            msg = bot.reply_to(call.message,
+                               'Ви впевнені?',
+                               reply_markup=markup)
+            bot.register_next_step_handler(msg, removeAdmin, deleteAdminUserName, call.from_user.username)
     else:
         print(f'{call.from_user.username} is not an admin')
 
@@ -177,8 +182,9 @@ def removeAdmin(message, deleteAdminUserName, username):
             item2 = types.KeyboardButton(roleName[1])
             item3 = types.KeyboardButton(roleName[2])
             item4 = types.KeyboardButton(roleName[3])
+            item5 = types.KeyboardButton("Забрати усі права.")
             markup.row(item1, item2)
-            markup.row(item3, item4)
+            markup.row(item3, item4, item5)
             msg = bot.reply_to(message, "Оберіть роль, з якої ви хочете зняти людини", reply_markup=markup)
             bot.register_next_step_handler(msg, removerole, deleteAdminUserName, username)
         elif message.text == "Ні ⛔":
@@ -195,7 +201,13 @@ def removerole(message, deleteAdminUserName, userName):
         role = str(message.text)
         deleteAdminUserNameProcces = str(deleteAdminUserName).strip(" ")
         deleteAdminUserNameProcces = str(deleteAdminUserNameProcces).replace("@","")
-        if checkIfAdminHaveRole(deleteAdminUserNameProcces,role):
+        if message.text == "Забрати усі права.":
+            deleteAdmin(deleteAdminUserNameProcces)
+            removeAdminRoleWhileSetNew(deleteAdminUserNameProcces)
+            bot.reply_to(message, f'У адміна {deleteAdminUserName} успішно забрано права за порушення ПСР (Правил Смішного Руху)',
+                         reply_markup=types.ReplyKeyboardRemove())
+            getAdminListByRole(role)
+        elif checkIfAdminHaveRole(deleteAdminUserNameProcces,role):
             deleteAdmin(deleteAdminUserNameProcces)
             removeAdminRole(deleteAdminUserNameProcces, role)
             bot.reply_to(message, f'Адміна {deleteAdminUserName} успішно знято з ролі {role}',
@@ -237,7 +249,9 @@ def addrole(message, newAdminUserName, userName):
         if checkIfAdminHaveRole(newAdminUserNameProcces,role):
             msg = bot.reply_to(message, f"Адмін @{newAdminUserNameProcces} уже має роль {role}.",reply_markup=types.ReplyKeyboardRemove())
         else:
-            addAdminToDb(newAdminUserNameProcces)
+            removeAdminRoleWhileSetNew(newAdminUserNameProcces)
+            deleteAdmin(newAdminUserNameProcces)
+            addAdminToDb(newAdminUserNameProcces, userName)
             addAdminRole(newAdminUserNameProcces, role)
             bot.reply_to(message, f'Адмін {newAdminUserName} успішно доданий на роль {role}',
                          reply_markup=types.ReplyKeyboardRemove())
@@ -339,7 +353,6 @@ def handle_document_anegdot(message,username):
                     print(downloaded_file)
                     new_file.write(downloaded_file)
                 proccesDocumentAnegdot(message, username)
-                bot.reply_to(message, "Анекдоти успішно затягнуто!")
             except:
                 msg = bot.reply_to(message, "Пришліть будь ласка текстовий файл!")
                 bot.register_next_step_handler(msg, handle_document_anegdot, username)
@@ -374,13 +387,13 @@ def handle_document_admin(message, username):
                     # print(downloaded_file)
                     new_file.write(downloaded_file)
                 proccesDocumentAdmin(message, username)
-                bot.reply_to(message, "Адміністратори успішно затягнуті!")
             except:
                 msg = bot.reply_to(message, "Пришліть будь ласка текстовий файл!")
                 bot.register_next_step_handler(msg, handle_document_admin, username)
 
 
 def proccesDocumentAdmin(message, username):
+    countAdded = 0
     with open("listAdminsProcces.txt", 'r', encoding="utf8") as fileAdmin:
         lines = fileAdmin.readlines()
         try:
@@ -392,7 +405,8 @@ def proccesDocumentAdmin(message, username):
                     listAdmins = listAdmins.split(";")
                     for row in listAdmins:
                         if not checkIfAdmin(row) and not row == "":
-                            addAdminToDb(row)
+                            row = row.split(";")
+                            addAdminToDb(row[0], row[1])
                 else:
                     roleLine = row.replace("\n", "")
                     roleLine = roleLine.split("/")
@@ -402,17 +416,22 @@ def proccesDocumentAdmin(message, username):
                     listAdmins = roleLine[1].split(";")
                     print("ListAdmins:: ")
                     print(listAdmins)
-                    listRights = roleLine[2]
                     for admin in listAdmins:
                         if not checkIfAdminHaveRole(admin, role) and not admin == "":
+                            countAdded = countAdded + 1
                             print("admin:" + admin)
                             addAdminRole(admin, role)
         except:
             msg = bot.reply_to(message, "Отакої, щось трапилось не так, пришліть текстовий файл ще раз!")
             bot.register_next_step_handler(msg, handle_document_admin, username)
+    if countAdded == 0:
+        bot.reply_to(message, "Процес завершено, нових адміністраторів не виявлено!")
+    elif countAdded > 0:
+        bot.reply_to(message, "Адміністратори успішно затягнуті!")
 
 
 def proccesDocumentAnegdot(message, username):
+    countAdded = 0
     with open("listAnegdotsProcces.txt", 'r', encoding="utf8") as fileAnegdot:
         lines = fileAnegdot.readlines()
         try:
@@ -423,16 +442,22 @@ def proccesDocumentAnegdot(message, username):
                     # print("RowFileAdmin:" + listAdmins)
                     categoryData = category.split(";")
                     if not checkIfExistsCategory(categoryData[0]):
+                        countAdded = countAdded + 1
                         addCategoryUsingTxt(categoryData[0], categoryData[1], categoryData[2])
                 elif "Anegdot: " in row:
                     anegdot = row.replace("\n", "")
                     anegdot = anegdot.replace("Anegdot: ", "")
                     anegdotData = anegdot.split(";")
                     if not checkIfExistsAnedgot(anegdotData[0], anegdotData[1]):
+                        countAdded = countAdded + 1
                         addAnegdotToDbUsingTxt(anegdotData[0], anegdotData[1], anegdotData[2], anegdotData[3])
         except:
             msg = bot.reply_to(message, "Отакої, щось трапилось не так, пришліть текстовий файл ще раз!")
             bot.register_next_step_handler(msg, handle_document_admin, username)
+    if countAdded == 0:
+        bot.reply_to(message, "Процес завершено, нових категорій або анекдотів не виявлено!")
+    elif countAdded > 0:
+        bot.reply_to(message, "Категорії та анекдоти успішно затягнуті!")
 
 
 
@@ -460,10 +485,11 @@ def gettxtfileadmin(message, username):
                 with open('listAdmins.txt', 'w', encoding='utf-8') as f:
                     info = ""
                     info += "List of admins: \n\n"
-                    for row in GetListOfAdmins():
-                        info += "UserName: " + row
+                    for row in GetListAndWhoAddOfAdmins():
+                        row = row.split(";")
+                        info += "UserName: " + row[0] + " | Who Added: " + row[1]
                         info += " | "
-                        info += "Role: " + GetRole(row) + "\n\n"
+                        info += "Role: " + GetRole(row[0]) + "\n\n"
                         print(info)
                     f.write(info)
                 bot.send_document(message.from_user.id, open(r'listAdmins.txt', 'rb'), reply_markup=types.ReplyKeyboardRemove())
@@ -471,7 +497,7 @@ def gettxtfileadmin(message, username):
                 with open('listAdmins.txt', 'w', encoding='utf-8') as f:
                     info = ""
                     info += "List of admins: "
-                    for row in GetListOfAdmins():
+                    for row in GetListAndWhoAddOfAdmins():
                         info += row + ";"
                     info += "\n"
                     for row in GetRoleAdminsAll():
