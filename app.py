@@ -121,6 +121,9 @@ def controlAdminPanel(message, username):
             farewell = getFarewellAccoringToHours()
             print(farewell)
             bot.reply_to(message, farewell, reply_markup=types.ReplyKeyboardRemove())
+        elif message.text is None:
+            msg = bot.reply_to(message, f'Я був би не проти нюдсів блонд, але пришліть будь ласка мені username')
+            bot.register_next_step_handler(msg, controlAdminPanel, username)
         else:
             newAdminUsername = str(message.text)
             markup = InlineKeyboardMarkup()
@@ -201,15 +204,15 @@ def removerole(message, deleteAdminUserName, userName):
         role = str(message.text)
         deleteAdminUserNameProcces = str(deleteAdminUserName).strip(" ")
         deleteAdminUserNameProcces = str(deleteAdminUserNameProcces).replace("@","")
-        if checkIfAdminHaveRole(deleteAdminUserNameProcces, role):
-            if message.text == "Забрати усі права.":
-                deleteAdmin(deleteAdminUserNameProcces)
-                removeAdminRoleWhileSetNew(deleteAdminUserNameProcces)
-                bot.reply_to(message,
-                             f'У адміна {deleteAdminUserName} успішно забрано права за порушення ПСР (Правил Смішного Руху)',
-                             reply_markup=types.ReplyKeyboardRemove())
-                getAdminListByRole(role)
-            else:
+        if role == "Забрати усі права." and checkIfAdmin(deleteAdminUserNameProcces):
+            deleteAdmin(deleteAdminUserNameProcces)
+            removeAdminRoleWhileSetNew(deleteAdminUserNameProcces)
+            bot.reply_to(message,
+                         f'У адміна {deleteAdminUserName} успішно забрано права за порушення ПСР (Правил Смішного Руху)',
+                         reply_markup=types.ReplyKeyboardRemove())
+        elif role == "Забрати усі права.":
+            msg = bot.reply_to(message, f"Адміна {deleteAdminUserName} не існує.", reply_markup=types.ReplyKeyboardRemove())
+        elif checkIfAdminHaveRole(deleteAdminUserNameProcces, role):
                 deleteAdmin(deleteAdminUserNameProcces)
                 removeAdminRole(deleteAdminUserNameProcces, role)
                 bot.reply_to(message, f'Адміна {deleteAdminUserName} успішно знято з ролі {role}',
