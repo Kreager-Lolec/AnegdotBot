@@ -881,6 +881,24 @@ def send_first_September():
                     DeleteChat(row)
 
 
+def yogurt():
+    if checkIfExistChats():
+        deleteNoneAnegdots()
+        listId = GetChatsId()
+        print(listId)
+        for row in listId:
+            if checkIfNotExistAnedgots():
+                bot.send_message(row, 'Анекдотів поки що немає.')
+            else:
+                anegdot = str(getAnegdot())
+                welcome = getWelcomeAccoringToHours()
+                print(welcome)
+                try:
+                    bot.send_message(row, "По йогурту 🥛 і спать.")
+                except:
+                    DeleteChat(row)
+
+
 @server.route('/' + TOKEN, methods=['POST'])
 def getMessage():
     json_string = request.get_data().decode('utf-8')
