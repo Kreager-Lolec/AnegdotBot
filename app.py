@@ -867,18 +867,12 @@ def send_first_September():
         listId = GetChatsId()
         print(listId)
         for row in listId:
-            if checkIfNotExistAnedgots():
-                bot.send_message(row, 'Анекдотів поки що немає.')
-            else:
-                anegdot = str(getAnegdot())
-                welcome = getWelcomeAccoringToHours()
-                print(welcome)
-                try:
-                    bot.send_photo(chat_id=row, photo=open('400_0_1598948688-8523.PNG', 'rb'))
-                    bot.send_photo(chat_id=row, photo=open('150359_main.jpg', 'rb'))
-                    bot.send_photo(chat_id=row, photo=open('150362_main.jpg', 'rb'))
-                except:
-                    DeleteChat(row)
+            try:
+                bot.send_photo(chat_id=row, photo=open('400_0_1598948688-8523.PNG', 'rb'))
+                bot.send_photo(chat_id=row, photo=open('150359_main.jpg', 'rb'))
+                bot.send_photo(chat_id=row, photo=open('150362_main.jpg', 'rb'))
+            except:
+                DeleteChat(row)
 
 
 def yogurt():
@@ -887,16 +881,22 @@ def yogurt():
         listId = GetChatsId()
         print(listId)
         for row in listId:
-            if checkIfNotExistAnedgots():
-                bot.send_message(row, 'Анекдотів поки що немає.')
-            else:
-                anegdot = str(getAnegdot())
-                welcome = getWelcomeAccoringToHours()
-                print(welcome)
-                try:
-                    bot.send_message(row, "По йогурту 🥛 і спать.")
-                except:
-                    DeleteChat(row)
+            try:
+                bot.send_message(row, "По йогурту 🥛 і спать.")
+            except:
+                DeleteChat(row)
+
+
+def balls():
+    if checkIfExistChats():
+        deleteNoneAnegdots()
+        listId = GetChatsId()
+        print(listId)
+        for row in listId:
+            try:
+                bot.send_photo(chat_id=row, photo=open('photo_2022-09-06_16-30-43.jpg', 'rb'))
+            except:
+                DeleteChat(row)
 
 
 @server.route('/' + TOKEN, methods=['POST'])
