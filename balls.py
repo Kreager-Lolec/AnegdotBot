@@ -1,3 +1,3 @@
-from app import balls
+from app import send_meme
 
-balls()
+send_meme()

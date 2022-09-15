@@ -861,16 +861,16 @@ def my_interval_job():
                     DeleteChat(row)
 
 
-def send_first_September():
+def send_meme():
     if checkIfExistChats():
         deleteNoneAnegdots()
         listId = GetChatsId()
         print(listId)
         for row in listId:
             try:
-                bot.send_photo(chat_id=row, photo=open('400_0_1598948688-8523.PNG', 'rb'))
-                bot.send_photo(chat_id=row, photo=open('150359_main.jpg', 'rb'))
-                bot.send_photo(chat_id=row, photo=open('150362_main.jpg', 'rb'))
+                bot.send_photo(chat_id=row, photo=open('video_2022-09-16_00-28-37.MP4', 'rb'))
+                # bot.send_photo(chat_id=row, photo=open('150359_main.jpg', 'rb'))
+                # bot.send_photo(chat_id=row, photo=open('150362_main.jpg', 'rb'))
             except:
                 DeleteChat(row)
 
