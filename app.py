@@ -868,7 +868,7 @@ def send_meme():
         print(listId)
         for row in listId:
             try:
-                bot.send_photo(chat_id=row, photo=open('video_2022-09-17_00-39-43.mp4', 'rb'), caption='Інфа наступна')
+                bot.send_video(chat_id=row, video=open('video_2022-09-17_00-39-43.mp4', 'rb'), caption='Інфа наступна')
                 # bot.send_photo(chat_id=row, photo=open('150359_main.jpg', 'rb'))
                 # bot.send_photo(chat_id=row, photo=open('150362_main.jpg', 'rb'))
             except:
