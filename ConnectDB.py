@@ -244,7 +244,7 @@ def GetChatsId():
 def checkIfExistsCategory(categoryLogical):
     category = proccesAnegdotOrCategoryName(categoryLogical)
     mycursor = mydb.cursor()
-    mycursor.execute(f'''SELECT COUNT(*) FROM CATEGORIES WHERE CategoryNameLogical = N'{category}' ''')
+    mycursor.execute(f'''SELECT COUNT(*) FROM CATEGORIES WHERE CategoryNameLogical = N'?' ''', category)
     if mycursor.fetchone()[0] == 1:
         return True
     return False
@@ -255,7 +255,7 @@ def checkIfExistsAnedgot(categoryLogical, anegdotLogical):
     anegdot = proccesAnegdotOrCategoryName(anegdotLogical)
     mycursor = mydb.cursor()
     mycursor.execute(
-        f'''SELECT COUNT(*) FROM ANEGDOTS WHERE CategoryNameLogical = N'{category}' AND AnegdotLogical = N'{anegdot}' ''')
+        f'''SELECT COUNT(*) FROM ANEGDOTS WHERE CategoryNameLogical = N'?' AND AnegdotLogical = N'?' ''', (category, anegdotLogical))
     if mycursor.fetchone()[0] == 1:
         return True
     return False
@@ -264,7 +264,7 @@ def checkIfExistsAnedgot(categoryLogical, anegdotLogical):
 def checkIfExistsAnedgotWithoutCategory(anegdotLogical):
     anegdot = proccesAnegdotOrCategoryName(anegdotLogical)
     mycursor = mydb.cursor()
-    mycursor.execute(f'''SELECT COUNT(*) FROM ANEGDOTS WHERE AnegdotLogical = N'{anegdot}' ''')
+    mycursor.execute(f'''SELECT COUNT(*) FROM ANEGDOTS WHERE AnegdotLogical = N'?' ''', anegdot)
     if mycursor.fetchone()[0] == 1:
         return True
     return False
@@ -289,7 +289,7 @@ def checkIfNotExistCategories():
 def checkIfNotExistAnedgotsByCategory(categoryLogical):
     category = proccesAnegdotOrCategoryName(categoryLogical)
     mycursor = mydb.cursor()
-    mycursor.execute(f'''SELECT COUNT(*) FROM ANEGDOTS WHERE CategoryNameLogical = N'{category}' ''')
+    mycursor.execute(f'''SELECT COUNT(*) FROM ANEGDOTS WHERE CategoryNameLogical = N'?' ''', category)
     if mycursor.fetchone()[0] == 0:
         return True
     return False
@@ -303,9 +303,9 @@ def addCategory(message):
     time = str(time.strftime("%H:%M:%S %d-%m-%y"))
     mycursor = mydb.cursor()
     mycursor.execute(f'''INSERT INTO CATEGORIES (CategoryNameDisplay, CategoryNameLogical, UserNameAdded, TimeAdded)
-    SELECT N'{categoryNameDisplay}', N'{categoryNameLogical}', N'{userName}', N'{time}'
+    SELECT N'?', N'?', N'?', N'?'
     WHERE
-        NOT EXISTS (SELECT * FROM CATEGORIES WHERE CategoryNameLogical = N'{categoryNameLogical}') ''')
+        NOT EXISTS (SELECT * FROM CATEGORIES WHERE CategoryNameLogical = N'?') ''', (categoryNameDisplay, categoryNameLogical, userName, time, categoryNameLogical))
     mydb.commit()
     mycursor.close()
 
@@ -315,9 +315,9 @@ def addCategoryUsingTxt(category,userName,time):
     categoryNameLogical = proccesAnegdotOrCategoryName(categoryNameDisplay)
     mycursor = mydb.cursor()
     mycursor.execute(f'''INSERT INTO CATEGORIES (CategoryNameDisplay, CategoryNameLogical, UserNameAdded, TimeAdded)
-    SELECT N'{categoryNameDisplay}', N'{categoryNameLogical}', N'{userName}', N'{time}'
+    SELECT N'?', N'?', N'?', N'?'
     WHERE
-        NOT EXISTS (SELECT * FROM CATEGORIES WHERE CategoryNameLogical = N'{categoryNameLogical}') ''')
+        NOT EXISTS (SELECT * FROM CATEGORIES WHERE CategoryNameLogical = N'?') ''', (categoryNameDisplay, categoryNameLogical, userName, time, categoryNameLogical))
     mydb.commit()
     mycursor.close()
 
@@ -332,9 +332,10 @@ def addAnegdotToDb(message, category):
     time = str(time.strftime("%H:%M:%S %d-%m-%y"))
     mycursor = mydb.cursor()
     mycursor.execute(f'''INSERT INTO ANEGDOTS (AnegdotDisplay,AnegdotLogical,CategoryNameDisplay,CategoryNameLogical,UserNameAdded,TimeAdded)
-    SELECT N'{anegdotDisplay}',N'{anegdotLogical}', N'{categoryNameDisplay}', N'{categoryNameLogical}', N'{userName}', N'{time}'
+    SELECT N'?',N'?', N'?', N'?', N'?', N'?'
     WHERE
-        NOT EXISTS (SELECT * FROM ANEGDOTS WHERE CategoryNameLogical = N'{categoryNameLogical}' AND AnegdotLogical = N'{anegdotLogical}')''')
+        NOT EXISTS (SELECT * FROM ANEGDOTS WHERE CategoryNameLogical = N'?' AND AnegdotLogical = N'?')'''
+                     , (anegdotDisplay, anegdotLogical, categoryNameDisplay, categoryNameLogical, userName, time, categoryNameLogical, anegdotLogical))
     mydb.commit()
     mycursor.close()
 
@@ -346,9 +347,10 @@ def addAnegdotToDbUsingTxt(anegdot, category, userName, time):
     anegdotLogical = proccesAnegdotOrCategoryName(anegdotDisplay)
     mycursor = mydb.cursor()
     mycursor.execute(f'''INSERT INTO ANEGDOTS (AnegdotDisplay,AnegdotLogical,CategoryNameDisplay,CategoryNameLogical,UserNameAdded,TimeAdded)
-    SELECT N'{anegdotDisplay}',N'{anegdotLogical}', N'{categoryNameDisplay}', N'{categoryNameLogical}', N'{userName}', N'{time}'
+    SELECT N'?',N'?', N'?', N'?', N'?', N'?'
     WHERE
-        NOT EXISTS (SELECT * FROM ANEGDOTS WHERE CategoryNameLogical = N'{categoryNameLogical}' AND AnegdotLogical = N'{anegdotLogical}')''')
+        NOT EXISTS (SELECT * FROM ANEGDOTS WHERE CategoryNameLogical = N'?' AND AnegdotLogical = N'?')''',
+                     (anegdotDisplay, anegdotLogical, categoryNameDisplay, categoryNameLogical, userName, time))
     mydb.commit()
     mycursor.close()
 
@@ -356,7 +358,7 @@ def addAnegdotToDbUsingTxt(anegdot, category, userName, time):
 def removeAnegdotFromDb(anegdot):
     anegdotLogical = proccesAnegdotOrCategoryName(str(anegdot))
     mycursor = mydb.cursor()
-    mycursor.execute(f''' DELETE FROM ANEGDOTS WHERE AnegdotLogical = N'{anegdotLogical}' ''')
+    mycursor.execute(f''' DELETE FROM ANEGDOTS WHERE AnegdotLogical = N'?' ''', anegdotLogical)
     mydb.commit()
     mycursor.close()
 
@@ -404,7 +406,7 @@ def getAnegdot():
 def getRandomAnegdotByCategory(categoryname):
     categoryNameLogical = proccesAnegdotOrCategoryName(categoryname)
     mycursor = mydb.cursor()
-    mycursor.execute(f'''SELECT * FROM ANEGDOTS WHERE CategoryNameLogical = N'{categoryNameLogical}' ''')
+    mycursor.execute(f'''SELECT * FROM ANEGDOTS WHERE CategoryNameLogical = N'?' ''', categoryNameLogical)
     info = mycursor.fetchall()
     listAnegdots = []
     for row in info:
@@ -417,7 +419,7 @@ def getRandomAnegdotByCategory(categoryname):
 def getAnegdotsByCategory(categoryname):
     categoryNameLogical = proccesAnegdotOrCategoryName(categoryname)
     mycursor = mydb.cursor()
-    mycursor.execute(f'''SELECT * FROM ANEGDOTS WHERE CategoryNameLogical = N'{categoryNameLogical}' ''')
+    mycursor.execute(f'''SELECT * FROM ANEGDOTS WHERE CategoryNameLogical = N'?' ''', categoryNameLogical)
     info = mycursor.fetchall()
     listAnegdots = []
     for row in info:
@@ -429,7 +431,7 @@ def getAnegdotsByCategory(categoryname):
 def getFullInfoAnegdotsByCategory(categoryname):
     categoryNameLogical = proccesAnegdotOrCategoryName(categoryname)
     mycursor = mydb.cursor()
-    mycursor.execute(f'''SELECT * FROM ANEGDOTS WHERE CategoryNameLogical = N'{categoryNameLogical}' ''')
+    mycursor.execute(f'''SELECT * FROM ANEGDOTS WHERE CategoryNameLogical = N'?' ''', categoryNameLogical)
     info = mycursor.fetchall()
     return info
 
@@ -437,7 +439,7 @@ def getFullInfoAnegdotsByCategory(categoryname):
 def deleteCategory(category):
     categoryNameLogical = proccesAnegdotOrCategoryName(category)
     mycursor = mydb.cursor()
-    mycursor.execute(f"DELETE FROM CATEGORIES WHERE CategoryNameLogical = N'{categoryNameLogical}' ")
+    mycursor.execute(f"DELETE FROM CATEGORIES WHERE CategoryNameLogical = N'?' ", categoryNameLogical)
     mydb.commit()
     mycursor.close()
 
@@ -446,7 +448,7 @@ def deleteAnegdotsByCategory(category):
     categoryNameLogical = proccesAnegdotOrCategoryName(category)
     print(category)
     mycursor = mydb.cursor()
-    mycursor.execute(f"DELETE FROM ANEGDOTS WHERE CategoryNameLogical = N'{categoryNameLogical}' ")
+    mycursor.execute(f"DELETE FROM ANEGDOTS WHERE CategoryNameLogical = N'?' ", categoryNameLogical)
     mydb.commit()
     mycursor.close()
 
