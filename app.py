@@ -5,6 +5,7 @@ from telebot.types import *
 from ConnectDB import *
 from flask import Flask, request
 import os
+import random
 
 
 TOKEN = Keys.API_KEY
@@ -77,6 +78,49 @@ def start(message):
         AddChat(message)
         print(message.from_user.id)
         bot.reply_to(message, "Привіт, я буду розказувати вам анегдоти")
+
+
+@bot.message_handler(commands=['proposeajoke'])
+def proposeajoke(message):
+    print("Id:" + str(message.from_user.id))
+    if checkIfNoneUserName(message.from_user.username):
+        bot.reply_to(message, "Для початку створіть собі username.")
+    else:
+        AddChat(message)
+        print(message.from_user.id)
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        item1 = types.KeyboardButton("🛑 Відмінити операцію!")
+        markup.row(item1)
+        msg = bot.reply_to(message, "Привіт, запропонуйте ваш анекдот", reply_markup=markup)
+        bot.register_next_step_handler(msg, message.from_user.username)
+
+
+def proccesajoke(message, username):
+    if username == message.from_user.username:
+        if message.text == "🛑 Відмінити операцію!":
+            farewell = getFarewellAccoringToHours()
+            print(farewell)
+            bot.reply_to(message, farewell, reply_markup=types.ReplyKeyboardRemove())
+        elif len(str(message.text)) <= maxNumOfSymsForAnegdot:
+            if checkIfExistsAnedgot(category, str(message.text)):
+                msg = bot.reply_to(message, "Анекдот уже існує, спробуйте надіслати щось нове!")
+                bot.register_next_step_handler(msg, proccesajoke, username)
+            else:
+                markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+                item1 = types.KeyboardButton("Так ✅")
+                item2 = types.KeyboardButton("Ні ⛔")
+                item3 = types.KeyboardButton("🛑 Відмінити операцію!")
+                markup.row(item1, item2)
+                markup.row(item3)
+                msg = bot.reply_to(message, "Ви хочете створити нову категорію для цього анекдоту?", reply_markup=markup)
+                bot.register_next_step_handler(msg, proccesajokecategory, username)
+        else:
+            msg = bot.reply_to(message,
+                               "Ви перевищили ліміт символів ( максимальна кількість - 510 ), спробуйте ще раз!")
+            bot.register_next_step_handler(msg, proccesajoke, username)
+    else:
+        msg = bot.reply_to(message,f'Зараз черга {username}')
+        bot.register_next_step_handler(msg, controlAdminPanel, username)
 
 
 @bot.message_handler(commands=['cmd'])
@@ -868,7 +912,8 @@ def send_meme():
         print(listId)
         for row in listId:
             try:
-                bot.send_video(chat_id=row, video=open('video_2022-09-17_00-39-43.mp4', 'rb'), caption='Інфа наступна')
+                print("ok")
+                # bot.send_video(chat_id=row, video=open('video_2022-09-17_00-39-43.mp4', 'rb'), caption='Інфа наступна')
                 # bot.send_photo(chat_id=row, photo=open('150359_main.jpg', 'rb'))
                 # bot.send_photo(chat_id=row, photo=open('150362_main.jpg', 'rb'))
             except:
@@ -882,7 +927,9 @@ def yogurt():
         print(listId)
         for row in listId:
             try:
-                bot.send_message(row, "По йогурту 🥛 і спать.")
+                a = random.randint(1, 10)
+                if a == 7:
+                    bot.send_message(row, "По йогурту 🥛 і спать.")
             except:
                 DeleteChat(row)
 
