@@ -1,2 +1,2 @@
-API_KEY = '5644015924:AAHlSg8F8DmtJZ2Km1vhvZ_1po0r3RaNfa4'
-DB_URI = 'postgres://yhcuqgeymytkov:c8c570a319fe7f036396afaaa58a23aef24c6e73e7df6f3a2b38b59f479bbea1@ec2-35-170-21-76.compute-1.amazonaws.com:5432/dacee733840a2s'
+API_KEY = '5962900612:AAG6VGSIZLCVgg0WQZM-BnaOajCLrmY41ek'
+DB_URI = "postgres://anegdotbot:hCHwzt1WgtNxeVM@top2.nearest.of.anegdotbot-db.internal:5432/anegdotbot?sslmode=disable"

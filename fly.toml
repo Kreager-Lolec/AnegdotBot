@@ -1,0 +1,14 @@
+# fly.toml file generated for anegdotbot on 2023-02-04T20:52:21+02:00
+
+app = "anegdotbot"
+kill_signal = "SIGINT"
+kill_timeout = 5
+
+[build]
+  builder = "heroku/buildpacks:latest"
+
+[env]
+  PORT = "8080"
+
+[experimental]
+  auto_rollback = true
