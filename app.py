@@ -4,11 +4,12 @@ from telebot import *
 from telebot.types import *
 from ConnectDB import *
 from apscheduler.schedulers.background import BackgroundScheduler
+import pytz
 
 
 TOKEN = Keys.API_KEY
 bot = telebot.TeleBot(TOKEN)
-scheduler = BackgroundScheduler()
+scheduler = BackgroundScheduler(timezone='Europe/Kiev')
 # deleteExactlyAnegdots()
 # deleteExactlyCategories()
 # deleteExactlyAdmin()
@@ -37,12 +38,12 @@ def my_interval_job():
                     DeleteChat(row)
 
 
-scheduler.add_job(send_something, 'interval', minutes=29, seconds=59)
-scheduler.add_job(my_interval_job, 'cron', hour='8,20')
+scheduler.add_job(send_something, 'interval', minutes=29)
+scheduler.add_job(my_interval_job, 'cron', hour='7,19')
 scheduler.start()
 
 print("Бот стартує")
-# DropTable()
+#DropTable()
 CreateTable()
 splitword_one = '@;'
 splitword_two = '@38)89'
@@ -1672,12 +1673,6 @@ def checkIfNoneUserName(username):
     return False
 
 
-@bot.message_handler(content_types=['text'])
-def sendanegdotfromsonya(message):
-    if message.text == "@mihailik_panchuk":
-        bot.send_audio(chat_id=message.chat.id,audio=open('audio_2022-08-21_14-42-52.MP3', 'rb'))
-
-
 def send_meme():
     if checkIfExistChats():
         deleteNoneAnegdots()
@@ -1686,49 +1681,9 @@ def send_meme():
         for row in listId:
             try:
                 bot.send_video(chat_id=row, video=open('video_2022-09-17_00-39-43.mp4', 'rb'), caption='Інфа наступна')
-                # bot.send_photo(chat_id=row, photo=open('150359_main.jpg', 'rb'))
-                # bot.send_photo(chat_id=row, photo=open('150362_main.jpg', 'rb'))
             except:
                 DeleteChat(row)
 
-
-def yogurt():
-    if checkIfExistChats():
-        deleteNoneAnegdots()
-        listId = GetChatsId()
-        print(listId)
-        for row in listId:
-            try:
-                bot.send_message(row, "По йогурту 🥛 і спать.")
-            except:
-                DeleteChat(row)
-
-
-def balls():
-    if checkIfExistChats():
-        deleteNoneAnegdots()
-        listId = GetChatsId()
-        print(listId)
-        for row in listId:
-            try:
-                bot.send_photo(chat_id=row, photo=open('photo_2022-09-06_16-30-43.jpg', 'rb'))
-            except:
-                DeleteChat(row)
-
-
-# @server.route('/' + TOKEN, methods=['POST'])
-# def getMessage():
-#     json_string = request.get_data().decode('utf-8')
-#     update = telebot.types.Update.de_json(json_string)
-#     bot.process_new_updates([update])
-#     return "!", 200
-#
-#
-# @server.route("/")
-# def webhook():
-#     bot.remove_webhook()
-#     bot.set_webhook(url='https://cryptic-sea-86814.herokuapp.com/' + TOKEN)
-#     return "!", 200
 
 def main():
     print('Бот Стартує!!!')
@@ -1740,4 +1695,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))

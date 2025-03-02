@@ -1,2 +1,2 @@
 API_KEY = '5962900612:AAG6VGSIZLCVgg0WQZM-BnaOajCLrmY41ek'
-DB_URI = "postgres://anegdotbot:hCHwzt1WgtNxeVM@top2.nearest.of.anegdotbot-db.internal:5432/anegdotbot?sslmode=disable"
+DB_URI = "postgres://anegdotbot:THT9S84Fn5Dlupk@anegdotbotdb.flycast:5432/anegdotbot?sslmode=disable"

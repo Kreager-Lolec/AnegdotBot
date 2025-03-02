@@ -66,7 +66,7 @@ def CreateTable():
         );
                        ''')
     mydb.commit()
-    listadmin = ['mihailik_panchuk', 'kreager', 'Barik_superman']
+    listadmin = ['mihailik_panchuk', 'zhuranskyi', 'Barik_superman']
     listwhoadd = ['Auto Added By System', 'Auto Added By System', 'Auto Added By System']
     # listAdminId = ['156911032','256266717','399228453']
     i = 0
@@ -82,7 +82,7 @@ def CreateTable():
 
 
 def insertRoles():
-    listadmin = ['mihailik_panchuk', 'kreager', 'Barik_superman']
+    listadmin = ['mihailik_panchuk', 'zhuranskyi', 'Barik_superman']
     listRights = ['addcategory', 'addanegdot', 'deletecategory', 'deleteanegdot', 'gettxtanegdot', 'gettxtadmins',
                   'controladmin', 'inserttxtcategoriesandanegdotstodb', 'inserttxtadminstodb']
     listUnlingRights = listRights[0] + ";" + listRights[1]
