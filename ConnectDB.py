@@ -445,6 +445,22 @@ def removeAnegdotFromDb(anegdot):
     mydb.commit()
     mycursor.close()
 
+def deleteCategoryWithAllJokes(category):
+    categoryNameLogical = proccesAnegdotOrCategoryName(category)
+    mycursor = mydb.cursor()
+
+    # Спочатку видаляємо анекдоти
+    mycursor.execute("DELETE FROM ANEGDOTS WHERE CategoryNameLogical = %s", (categoryNameLogical,))
+    mydb.commit()
+
+    # Потім видаляємо саму категорію
+    mycursor.execute("DELETE FROM CATEGORIES WHERE CategoryNameLogical = %s", (categoryNameLogical,))
+    mydb.commit()
+
+    mycursor.close()
+    print(f"Категорію '{category}' та всі її анекдоти успішно видалено.")
+
+
 
 def AddChat(message):
     mycursor = mydb.cursor()

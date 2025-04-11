@@ -4,16 +4,21 @@ from telebot import *
 from telebot.types import *
 from ConnectDB import *
 from apscheduler.schedulers.background import BackgroundScheduler
-import pytz
 
 
 TOKEN = Keys.API_KEY
 bot = telebot.TeleBot(TOKEN)
-scheduler = BackgroundScheduler(timezone='Europe/Kiev')
+scheduler = BackgroundScheduler()
+telebot.logger.setLevel(logging.DEBUG)
+
+import requests
+requests.get(f"https://api.telegram.org/bot{TOKEN}/deleteWebhook?drop_pending_updates=true")
+
 # deleteExactlyAnegdots()
 # deleteExactlyCategories()
 # deleteExactlyAdmin()
 # server = Flask(__name__)
+bot_data_cache = {}
 
 
 def send_something():
@@ -38,12 +43,12 @@ def my_interval_job():
                     DeleteChat(row)
 
 
-scheduler.add_job(send_something, 'interval', minutes=29)
-scheduler.add_job(my_interval_job, 'cron', hour='7,19')
+scheduler.add_job(send_something, 'interval', minutes=29, seconds=59)
+scheduler.add_job(my_interval_job, 'cron', hour='8,20')
 scheduler.start()
 
 print("Бот стартує")
-#DropTable()
+# DropTable()
 CreateTable()
 splitword_one = '@;'
 splitword_two = '@38)89'
@@ -105,6 +110,14 @@ def getFarewellAccoringToHours():
         return "Хорошої ночі!"
     else:
         return "До зустрічі!"
+
+@bot.message_handler(commands=['test'])
+def test(message):
+    msg = bot.reply_to(message, "Введи щось:")
+    bot.register_next_step_handler(msg, echo_next)
+
+def echo_next(message):
+    bot.reply_to(message, f"Ти написав: {message.text}")
 
 
 @bot.message_handler(commands=['start'])
@@ -348,22 +361,22 @@ def proccesajoke(message, username, userid):
     if username == message.from_user.username:
         if message.text == "Додати":
             markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-            item1 = types.KeyboardButton("Запропонувати лише анекдот")
+            item1 = types.KeyboardButton("Запропонувати анекдот (Ви зможете згодом запропонувати нову категорію, або вибрати наявну")
             item2 = types.KeyboardButton("Запропонувати лише категорію")
-            item3 = types.KeyboardButton("Запропонувати обидві")
+            #item3 = types.KeyboardButton("Запропонувати обидві")
             item4 = types.KeyboardButton("🛑 Відмінити операцію!")
             markup.row(item1, item2)
-            markup.row(item3, item4)
+            markup.row(item4)
             msg = bot.reply_to(message, "Запропонуйте ваш анекдот.", reply_markup=markup)
             bot.register_next_step_handler(msg, proccesaddjoke, username, userid)
         elif message.text == "Видалити":
             markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-            item1 = types.KeyboardButton("Запропонувати лише анекдот")
-            item2 = types.KeyboardButton("Запропонувати лише категорію")
-            item3 = types.KeyboardButton("Запропонувати обидві")
+            item1 = types.KeyboardButton("Запропонувати видалити анекдот із будь-якої категорії")
+            item2 = types.KeyboardButton("Запропонувати видалити категорію повністю")
+            #item3 = types.KeyboardButton("Запропонувати обидві")
             item4 = types.KeyboardButton("🛑 Відмінити операцію!")
             markup.row(item1, item2)
-            markup.row(item3, item4)
+            markup.row(item4)
             msg = bot.reply_to(message, "Запропонуйте анекдот для видалення.", reply_markup=markup)
             bot.register_next_step_handler(msg, proccesdeletejoke, username, userid)
         elif message.text == "🛑 Відмінити операцію!":
@@ -380,63 +393,71 @@ def proccesajoke(message, username, userid):
 
 
 def proccesaddjoke(message, username, userid):
-    if username == message.from_user.username:
-        if message.text == "🛑 Відмінити операцію!":
-            farewell = getFarewellAccoringToHours()
-            print(farewell)
-            bot.reply_to(message, farewell, reply_markup=types.ReplyKeyboardRemove())
-        elif message.text == "Запропонувати лише анекдот":
-            markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-            item1 = types.KeyboardButton("🛑 Відмінити операцію!")
-            markup.row(item1)
-            msg = bot.reply_to(message, "Введіть назву анекдота", reply_markup=markup)
-            bot.register_next_step_handler(msg, proccesregisterAnegdot, username)
-        elif message.text == "Запропонувати лише категорію":
-            markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-            item1 = types.KeyboardButton("🛑 Відмінити операцію!")
-            markup.row(item1)
-            msg = bot.reply_to(message, "Введіть назву категорії", reply_markup=markup)
-            bot.register_next_step_handler(msg, proccesregisterCategory, username)
-        elif message.text == "Запропонувати обидві":
-            if len(str(message.text)) <= maxNumOfSymsForAnegdot:
-                if checkIfExistsAnedgotWithoutCategory(str(message.text)):
-                    msg = bot.reply_to(message, "Анекдот уже існує, спробуйте надіслати щось нове!")
-                    bot.register_next_step_handler(msg, proccesaddjoke, username, userid)
-                else:
-                    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-                    item1 = types.KeyboardButton("🛑 Відмінити операцію!")
-                    markup.row(item1)
-                    msg = bot.reply_to(message, "Введіть категорію, до якої хочете додати анекдот?",
-                                   reply_markup=markup)
-                    bot.register_next_step_handler(msg, proccesaddjokecategory, str(message.text), username, userid)
+    try:
+        if username == message.from_user.username:
+            if message.text == "🛑 Відмінити операцію!":
+                farewell = getFarewellAccoringToHours()
+                print(farewell)
+                bot.reply_to(message, farewell, reply_markup=types.ReplyKeyboardRemove())
+            elif message.text == "Запропонувати анекдот (Ви зможете згодом запропонувати нову категорію, або вибрати наявну":
+                markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+                item1 = types.KeyboardButton("🛑 Відмінити операцію!")
+                markup.row(item1)
+                msg = bot.reply_to(message, "Введіть назву анекдота", reply_markup=markup)
+                bot.register_next_step_handler(msg, proccesregisterAnegdot, username, userid)
+            elif message.text == "Запропонувати лише категорію":
+                markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+                item1 = types.KeyboardButton("🛑 Відмінити операцію!")
+                markup.row(item1)
+                msg = bot.reply_to(message, "Введіть назву категорії", reply_markup=markup)
+                bot.register_next_step_handler(msg, proccesregisterCategory, username)
+            else:
+                bot.register_next_step_handler(message, proccesaddjoke, username, userid)
+            '''elif message.text == "Запропонувати обидві":
+                if len(str(message.text)) <= maxNumOfSymsForAnegdot:
+                    if checkIfExistsAnedgotWithoutCategory(str(message.text)):
+                        msg = bot.reply_to(message, "Анекдот уже існує, спробуйте надіслати щось нове!")
+                        bot.register_next_step_handler(msg, proccesaddjoke, username, userid)
+                    else:
+                        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+                        item1 = types.KeyboardButton("🛑 Відмінити операцію!")
+                        markup.row(item1)
+                        msg = bot.reply_to(message, "Введіть категорію, до якої хочете додати анекдот?",
+                                           reply_markup=markup)
+                        bot.register_next_step_handler(msg, proccesaddjokecategory, str(message.text), username, userid)
+                        '''
         else:
-            bot.register_next_step_handler(message, proccesaddjoke, username, userid)
-    else:
-        msg = bot.reply_to(message, f"Зараз черга @{username}.")
-        bot.register_next_step_handler(msg, proccesaddjoke, username, userid)
+            msg = bot.reply_to(message, f"Зараз черга @{username}.")
+            bot.register_next_step_handler(msg, proccesaddjoke, username, userid)
+    except Exception as e:
+        print(f"Помилка: {e}")
 
 
-def proccesregisterAnegdot(message, username):
+def proccesregisterAnegdot(message, username, userid):
+    print("Очікуваний username:", username)
+    print("Отриманий:", message.from_user.username)
     if message.from_user.username == username:
+        print("Увійшли у функцію під юзер: " + str(message.from_user.username) + "Текст: " + str(message.text))
         if message.text == "🛑 Відмінити операцію!":
             farewell = getFarewellAccoringToHours()
             print(farewell)
             bot.reply_to(message, farewell, reply_markup=types.ReplyKeyboardRemove())
-            if len(str(message.text)) <= maxNumOfSymsForAnegdot:
+        elif len(str(message.text)) <= maxNumOfSymsForAnegdot:
                 if checkIfExistsAnedgotWithoutCategory(str(message.text)):
                     msg = bot.reply_to(message, "Анекдот уже існує, спробуйте надіслати щось нове!")
-                    bot.register_next_step_handler(msg, proccesregisterAnegdot, username)
+                    bot.register_next_step_handler(msg, proccesregisterAnegdot, username, userid)
                 else:
                     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
                     item1 = types.KeyboardButton("🛑 Відмінити операцію!")
-                    item2 = types.KeyboardButton("Так ✅")
-                    item3 = types.KeyboardButton("Ні ⛔")
+                    item2 = types.KeyboardButton("Додати анекдот до нової категорії?")
+                    item3 = types.KeyboardButton("Додати анекдот до існуючої категорії?")
                     markup.row(item2, item3)
                     markup.row(item1)
-                    msg = bot.reply_to(message, "Ви підтверджуєте свої дії?",
+                    msg = bot.reply_to(message, "Оберіть одне з двох",
                                        reply_markup=markup)
-                    bot.register_next_step_handler(msg, proccesaddjokecategory, str(message.text), username)
-            else:
+                    bot.register_next_step_handler(msg, proccesaddjokecategory, str(message.text), username,
+                                                   userid)
+        else:
                 msg = bot.reply_to(message,
                                    "Ви перевищили ліміт символів ( максимальна кількість - 510 ), спробуйте ще раз!")
                 bot.register_next_step_handler(msg, proccesregisterAnegdot, username)
@@ -478,13 +499,13 @@ def proccesaddjokecategory(message, joke, username, userid):
             farewell = getFarewellAccoringToHours()
             print(farewell)
             bot.reply_to(message, farewell, reply_markup=types.ReplyKeyboardRemove())
-        elif message.text == "Так ✅":
+        elif message.text == "Додати анекдот до нової категорії?":
             markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
             item1 = types.KeyboardButton("🛑 Відмінити операцію!")
             markup.row(item1)
             msg = bot.reply_to(message, "Введіть назву категорії", reply_markup=markup)
-            bot.register_next_step_handler(msg, sendadminjoke, joke, username, userid)
-        elif message.text == "Ні ⛔":
+            bot.register_next_step_handler(msg, handle_new_category_name, joke, username, userid)
+        elif message.text == "Додати анекдот до існуючої категорії?":
             markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
             item1 = types.KeyboardButton("🛑 Відмінити операцію!")
             markup.row(item1)
@@ -492,15 +513,50 @@ def proccesaddjokecategory(message, joke, username, userid):
             markup.width = 3
             for row in getCategories():
                 print(sys.getsizeof(row))
-                markup.add(InlineKeyboardButton(row, callback_data="showane: " + row))
+                callback_data = f"addjoke|{row}|{username}|{userid}"
+                bot_data_cache[userid] = joke  # кешуємо анекдот по ID користувача
+                markup.add(InlineKeyboardButton(row, callback_data=callback_data))
             bot.reply_to(message, "Оберіть категорію, до якої хочете додати свій анекдот", reply_markup=markup)
-            bot.reply_to(message, "Ваший анекдот відправлений на обробку адміністратором.", reply_markup=types.ReplyKeyboardRemove())
-            sendadminjoke(message, joke, username, userid)
         else:
             bot.register_next_step_handler(message, proccesaddjokecategory, joke, username, userid)
     else:
         msg = bot.reply_to(message, f"Зараз черга @{username}.")
         bot.register_next_step_handler(msg, proccesaddjokecategory, joke, username, userid)
+
+
+def handle_new_category_name(message, joke, username, userid):
+    if message.text == "🛑 Відмінити операцію!":
+        farewell = getFarewellAccoringToHours()
+        bot.reply_to(message, farewell, reply_markup=types.ReplyKeyboardRemove())
+        return
+
+    category = message.text.strip()
+    if not category:
+        msg = bot.reply_to(message, "Категорія не може бути порожньою. Введіть ще раз.")
+        bot.register_next_step_handler(msg, handle_new_category_name, joke, username, userid)
+        return
+
+    # Тут можна додати категорію у БД, якщо треба
+    # addNewCategory(category)
+
+    sendadminjoke(message, joke, username, userid, category)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("addjoke|"))
+def handle_add_joke_callback(call):
+    _, category, username, userid = call.data.split("|")
+    userid = int(userid)
+    joke = bot_data_cache.get(userid)
+
+    if not joke:
+        bot.answer_callback_query(call.id, "Анекдот не знайдено або термін дії вичерпано.")
+        return
+
+    bot.answer_callback_query(call.id)
+    bot.send_message(call.message.chat.id,
+                     f"Анекдот у категорію «{category}» відправлений на обробку адміністратору.",
+                     reply_markup=types.ReplyKeyboardRemove())
+    sendadminjoke(call.message, joke, username, userid, category)
 
 
 def proccesdeletejoke(message, username, userid):
@@ -509,19 +565,25 @@ def proccesdeletejoke(message, username, userid):
             farewell = getFarewellAccoringToHours()
             print(farewell)
             bot.reply_to(message, farewell, reply_markup=types.ReplyKeyboardRemove())
-        elif message.text == "Запропонувати лише анекдот":
+        elif message.text == "Запропонувати видалити анекдот із будь-якої категорії":
             markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
             item1 = types.KeyboardButton("🛑 Відмінити операцію!")
             markup.row(item1)
-            msg = bot.reply_to(message, "Введіть назву анекдота", reply_markup=markup)
-            bot.register_next_step_handler(msg, proccesdeleteAnegdot, username)
-        elif message.text == "Запропонувати лише категорію":
+            msg = bot.reply_to(message, "Введіть анекдот, який бажаєте видалити", reply_markup=markup)
+            bot.register_next_step_handler(msg, proccesdeleteAnegdot, username, userid)
+
+        elif message.text == "Запропонувати видалити категорію повністю":
             markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
             item1 = types.KeyboardButton("🛑 Відмінити операцію!")
             markup.row(item1)
-            msg = bot.reply_to(message, "Введіть назву категорії", reply_markup=markup)
-            bot.register_next_step_handler(msg, proccesdeleteCategory, username)
-        elif message.text == "Запропонувати обидві":
+            markup = InlineKeyboardMarkup()
+            bot.reply_to(message, "Йде процес виведення категорій...", reply_markup=types.ReplyKeyboardRemove())
+            for cat in getCategories():
+                markup.add(InlineKeyboardButton(cat, callback_data=f"deletecat|{cat}|{username}|{userid}"))
+            bot.reply_to(message, "Оберіть категорію для видалення", reply_markup=markup)
+        else:
+            bot.register_next_step_handler(message, proccesdeletejoke, username, userid)
+        '''elif message.text == "Запропонувати обидві":
             if len(str(message.text)) <= maxNumOfSymsForAnegdot:
                 if checkIfExistsAnedgotWithoutCategory(str(message.text)):
                     msg = bot.reply_to(message, "Анекдот уже існує, спробуйте надіслати щось нове!")
@@ -532,69 +594,113 @@ def proccesdeletejoke(message, username, userid):
                     markup.row(item1)
                     msg = bot.reply_to(message, "Введіть категорію, до якої хочете додати анекдот?",
                                        reply_markup=markup)
-                    bot.register_next_step_handler(msg, proccesdeletejokecategory, str(message.text), username, userid)
-        else:
-            bot.register_next_step_handler(message, proccesdeletejoke, username, userid)
+                    bot.register_next_step_handler(msg, proccesdeletejokecategory, str(message.text), username, userid)'''
     else:
         msg = bot.reply_to(message, f"Зараз черга @{username}.")
         bot.register_next_step_handler(msg, proccesdeletejoke, username, userid)
 
 
-def proccesdeleteAnegdot(message, username):
-    if message.from_user.username == username:
-        if message.text == "🛑 Відмінити операцію!":
-            farewell = getFarewellAccoringToHours()
-            print(farewell)
-            bot.reply_to(message, farewell, reply_markup=types.ReplyKeyboardRemove())
-            if len(str(message.text)) <= maxNumOfSymsForAnegdot:
-                if checkIfExistsAnedgotWithoutCategory(str(message.text)):
-                    msg = bot.reply_to(message, "Анекдот уже існує, спробуйте надіслати щось нове!")
-                    bot.register_next_step_handler(msg, proccesregisterAnegdot, username)
-                else:
-                    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-                    item1 = types.KeyboardButton("🛑 Відмінити операцію!")
-                    markup.row(item1)
-                    msg = bot.reply_to(message, ".",
-                                       reply_markup=markup)
-                    bot.register_next_step_handler(msg, proccesaddjokecategory, str(message.text), username)
-            else:
-                msg = bot.reply_to(message,
-                                   "Ви перевищили ліміт символів ( максимальна кількість - 510 ), спробуйте ще раз!")
-                bot.register_next_step_handler(msg, proccesregisterAnegdot, username)
-    else:
+def proccesdeleteAnegdot(message, username, userid):
+    if message.from_user.username != username:
         bot.reply_to(message, f"Зараз черга @{username}.")
-        bot.register_next_step_handler(message, proccesregisterAnegdot, username)
+        bot.register_next_step_handler(message, proccesdeleteAnegdot, username, userid)
+        return
+
+    if message.text == "🛑 Відмінити операцію!":
+        farewell = getFarewellAccoringToHours()
+        bot.reply_to(message, farewell, reply_markup=types.ReplyKeyboardRemove())
+        return
+
+    if len(message.text) > maxNumOfSymsForAnegdot:
+        msg = bot.reply_to(message,
+            "Ви перевищили ліміт символів (максимум — 510). Спробуйте ще раз!")
+        bot.register_next_step_handler(msg, proccesdeleteAnegdot, username, userid)
+        return
+
+    # ✅ Перевірка на існування
+    if not checkIfExistsAnedgotWithoutCategory(message.text):
+        msg = bot.reply_to(message, "Такого анекдота не знайдено в базі. Спробуйте інший.")
+        bot.register_next_step_handler(msg, proccesdeleteAnegdot, username, userid)
+        return
+
+    joke = message.text.strip()
+
+    sendadmindeleteanycategory(message, joke, username, userid)
 
 
-def proccesdeleteCategory(message, username):
-    maxNumOfSymsForCategory = 55
-    if message.from_user.username == username:
-        if message.text == "🛑 Відмінити операцію!":
-            farewell = getFarewellAccoringToHours()
-            print(farewell)
-            bot.reply_to(message, farewell, reply_markup=types.ReplyKeyboardRemove())
-        elif len(message.text.encode('utf-8')) <= maxNumOfSymsForCategory:
-            if checkIfExistsCategory(str(message.text)):
-                msg = bot.reply_to(message, "Категорія уже існує, спробуйте надіслати щось нове!")
-                bot.register_next_step_handler(msg, proccesregisterCategory, username)
-            else:
-                addCategory(message)
-                bot.reply_to(message, "Категорію успішно додано", reply_markup=types.ReplyKeyboardRemove())
-            markup = InlineKeyboardMarkup()
-            markup.width = 3
-            for row in getCategories():
-                print(sys.getsizeof(row))
-                markup.add(InlineKeyboardButton(row, callback_data="showane: " + row))
-            bot.reply_to(message, "Список категорій", reply_markup=markup)
-        else:
-            msg = bot.reply_to(message, f'Назва категорії: "{message.text}" є занадто довгою ( максимальна кількість символів: ( 55 - для латиниці, 27 - для кирилиці) )')
-            bot.register_next_step_handler(msg, proccesregisterCategory, username)
-    else:
-        bot.reply_to(message, f"Зараз черга @{username}.")
-        bot.register_next_step_handler(message, proccesregisterCategory, username)
+def sendadmindeleteanycategory(message, joke, username, userid):
+    bot.reply_to(message, "Ваш запит на видалення анекдота відправлено адміністратору.",
+                 reply_markup=types.ReplyKeyboardRemove())
+
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.row(
+        types.KeyboardButton("Так ✅"),
+        types.KeyboardButton("Ні ⛔")
+    )
+    markup.row(types.KeyboardButton("🛑 Відмінити операцію!"))
+
+    msg = bot.send_message(
+        256266717,
+        f"@{username} хоче видалити анекдот:\n\n{joke}\n\n⚠️ Видалення з будь-якої категорії, де він є.",
+        reply_markup=markup
+    )
+
+    bot.register_next_step_handler(msg, approveordeleteanycategory, username, userid, joke)
+
+def approveordeleteanycategory(message, username, userid, joke):
+    if message.text == "🛑 Відмінити операцію!":
+        bot.reply_to(message, "Операцію скасовано.", reply_markup=types.ReplyKeyboardRemove())
+    elif message.text == "Так ✅":
+        removeAnegdotFromDb(joke)
+        bot.send_message(userid, f"Анекдот «{joke}» успішно видалено з усіх категорій.", reply_markup=types.ReplyKeyboardRemove())
+    elif message.text == "Ні ⛔":
+        bot.send_message(userid, f"Ваш запит на видалення анекдота було відхилено.", reply_markup=types.ReplyKeyboardRemove())
 
 
-def proccesdeletejokecategory(message, joke, username, userid):
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("deletecat|"))
+def handle_delete_category_callback(call):
+    _, category, username, userid = call.data.split("|")
+    userid = int(userid)
+
+    bot.answer_callback_query(call.id)
+
+    msg = bot.send_message(
+        call.message.chat.id,
+        f"Запит на видалення категорії «{category}» та всіх її анекдотів надіслано адміністратору.",
+        reply_markup=types.ReplyKeyboardRemove()
+    )
+
+    sendadmindeletecategory(msg, category, username, userid)
+
+def approveordeletecategory(message, username, userid, category):
+    if message.text == "🛑 Відмінити операцію!":
+        bot.reply_to(message, "Операцію скасовано.", reply_markup=types.ReplyKeyboardRemove())
+    elif message.text == "Так ✅":
+        deleteCategoryWithAllJokes(category)  # ця функція має видаляти і категорію, і всі її анекдоти
+        bot.send_message(userid, f"Категорію «{category}» і всі анекдоти в ній успішно видалено.", reply_markup=types.ReplyKeyboardRemove())
+    elif message.text == "Ні ⛔":
+        bot.send_message(userid, f"Видалення категорії «{category}» відхилено.", reply_markup=types.ReplyKeyboardRemove())
+
+
+def sendadmindeletecategory(message, category, username, userid):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    item1 = types.KeyboardButton("Так ✅")
+    item2 = types.KeyboardButton("Ні ⛔")
+    item3 = types.KeyboardButton("🛑 Відмінити операцію!")
+    markup.row(item1, item2)
+    markup.row(item3)
+
+    msg = bot.send_message(
+        256266717,
+        f"@{username} хоче повністю видалити категорію: «{category}»\n⚠️ Всі анекдоти в ній буде втрачено.",
+        reply_markup=markup
+    )
+
+    bot.register_next_step_handler(msg, approveordeletecategory, username, userid, category)
+
+
+'''def proccesdeletejokecategory(message, joke, username, userid):
     if username == message.from_user.username:
         if message.text == "🛑 Відмінити операцію!":
             farewell = getFarewellAccoringToHours()
@@ -623,20 +729,26 @@ def proccesdeletejokecategory(message, joke, username, userid):
     else:
         msg = bot.reply_to(message, f"Зараз черга @{username}.")
         bot.register_next_step_handler(msg, proccesaddjokecategory, joke, username, userid)
+'''
 
-
-def sendadminjoke(message, joke, username, userid):
+def sendadminjoke(message, joke, username, userid, category):
     bot.reply_to(message, "Ваший анекдот відправлений на обробку адміністратором.",
                  reply_markup=types.ReplyKeyboardRemove())
+
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     item1 = types.KeyboardButton("Так ✅")
     item2 = types.KeyboardButton("Ні ⛔")
     item3 = types.KeyboardButton("🛑 Відмінити операцію!")
     markup.row(item1, item2)
     markup.row(item3)
-    # bot.send_message(156911032, "@" + username + " запропонував такий анекдот: " + joke + " у таку категорію: " + message.text, reply_markup=markup)
-    msg = bot.send_message(256266717, "@" + username + " запропонував такий анекдот: " + joke + " у таку категорію: " + message.text, reply_markup=markup)
-    bot.register_next_step_handler(msg, approveornojoke, username, userid, joke, message.text)
+
+    msg = bot.send_message(
+        256266717,  # id адміна
+        f"@{username} запропонував такий анекдот:\n\n{joke}\n\nУ категорію: {category}",
+        reply_markup=markup
+    )
+
+    bot.register_next_step_handler(msg, approveornojoke, username, userid, joke, category)
 
 
 def approveornojoke(message, username, userid, joke, categoryjoke):
@@ -651,10 +763,9 @@ def approveornojoke(message, username, userid, joke, categoryjoke):
             addCategoryApprove(categoryjoke, username)
             addAnegdotToDbApprove(joke, categoryjoke, username)
         msg = bot.send_message(userid, "Запропонований вами анекдот: " + joke + " успішно прийнято та додано.", reply_markup=types.ReplyKeyboardRemove())
-        bot.register_next_step_handler(msg, sendadminjoke, joke, username, userid)
     elif message.text == "Ні ⛔":
-        msg = bot.send_message(userid, "Запропонований вами анекдот: " + joke + " відхилено, випробуйте вашу вдачу ще раз /proposeajoke.", reply_markup=types.ReplyKeyboardRemove())
-        bot.register_next_step_handler(msg, sendadminjoke, joke, username, userid)
+        msg = bot.send_message(userid, "Запропонований вами анекдот: " + joke + " відхилено, випробуйте вашу вдачу ще раз, та напишіть нову варіацію анекдоту.", reply_markup=types.ReplyKeyboardRemove())
+        bot.register_next_step_handler(msg, sendadminjoke, joke, username, userid, categoryjoke)
 
 
 
@@ -1673,6 +1784,12 @@ def checkIfNoneUserName(username):
     return False
 
 
+@bot.message_handler(content_types=['text'])
+def sendanegdotfromsonya(message):
+    if message.text == "@mihailik_panchuk":
+        bot.send_audio(chat_id=message.chat.id,audio=open('audio_2022-08-21_14-42-52.MP3', 'rb'))
+
+
 def send_meme():
     if checkIfExistChats():
         deleteNoneAnegdots()
@@ -1681,17 +1798,67 @@ def send_meme():
         for row in listId:
             try:
                 bot.send_video(chat_id=row, video=open('video_2022-09-17_00-39-43.mp4', 'rb'), caption='Інфа наступна')
+                # bot.send_photo(chat_id=row, photo=open('150359_main.jpg', 'rb'))
+                # bot.send_photo(chat_id=row, photo=open('150362_main.jpg', 'rb'))
             except:
                 DeleteChat(row)
 
 
+def yogurt():
+    if checkIfExistChats():
+        deleteNoneAnegdots()
+        listId = GetChatsId()
+        print(listId)
+        for row in listId:
+            try:
+                bot.send_message(row, "По йогурту 🥛 і спать.")
+            except:
+                DeleteChat(row)
+
+
+def balls():
+    if checkIfExistChats():
+        deleteNoneAnegdots()
+        listId = GetChatsId()
+        print(listId)
+        for row in listId:
+            try:
+                bot.send_photo(chat_id=row, photo=open('photo_2022-09-06_16-30-43.jpg', 'rb'))
+            except:
+                DeleteChat(row)
+
+
+# @server.route('/' + TOKEN, methods=['POST'])
+# def getMessage():
+#     json_string = request.get_data().decode('utf-8')
+#     update = telebot.types.Update.de_json(json_string)
+#     bot.process_new_updates([update])
+#     return "!", 200
+#
+#
+# @server.route("/")
+# def webhook():
+#     bot.remove_webhook()
+#     bot.set_webhook(url='https://cryptic-sea-86814.herokuapp.com/' + TOKEN)
+#     return "!", 200
+def safe_polling():
+    while True:
+        try:
+            print("⏳ Запускаю polling...")
+            bot.infinity_polling()
+        except Exception as e:
+            print(f"❌ Polling помилка: {e}")
+            time.sleep(5)
+
+
 def main():
-    print('Бот Стартує!!!')
+    print("Бот стартує!!!")
     try:
-        bot.infinity_polling()
-    except:
-        print("Not today")
+        safe_polling()
+    except Exception as e:
+        print(f"Помилка: {e}")
 
 
 if __name__ == "__main__":
     main()
+    # server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
